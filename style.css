@@ -47,12 +47,27 @@ body {
     padding: 5px;
     padding-left: 20px;
     margin-top: 10px;
+    box-shadow: 5px 3px 3px gray;
 }
 
 #profileImage {
     width:150px;
     background-color: blue;
     float: right;
+    box-shadow: 5px 3px 3px gray;
 }
 
+.headText {
+    font-size: x-large;
+    font-weight: bold;
+}
 
+.container {
+    margin-top: 15px;
+}
+
+#cvButton {
+    float: right;
+    margin: 2px;
+    margin-right: 5px;
+}
