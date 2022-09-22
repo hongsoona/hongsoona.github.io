@@ -35,6 +35,20 @@ body {
 
 #Name {
     margin-top: 20px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 5px 3px 3px gray;
+    border-bottom: 30px;
+}
+
+#description {
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 5px 3px 3px gray;
+    border-bottom: 30px;
+    box-sizing: border-box;
+    padding: 10px;
+    margin-top: 30px;
 }
 
 #summery {
@@ -52,9 +66,8 @@ body {
 
 #profileImage {
     width:150px;
-    background-color: blue;
     float: right;
-    box-shadow: 5px 3px 3px gray;
+    margin: 5px;
 }
 
 .headText {
@@ -64,6 +77,11 @@ body {
 
 .container {
     margin-top: 15px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 5px 3px 3px gray;
+    box-sizing: border-box;
+    padding: 10px;
 }
 
 #cvButton {
