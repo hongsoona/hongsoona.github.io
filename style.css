@@ -1,0 +1,42 @@
+#mainBody {
+    width:100%;
+    padding: 10px;
+    box-sizing: border-box;
+    font-size: large;
+}
+@media screen and (min-width: 800px) {
+    #mainBody {
+        width: 800px;
+    }
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0px;
+    padding: 0px;
+    border: 0px;
+    background-color: aliceblue;
+}
+
+#korName {
+    font-size: larger;
+}
+
+#engName {
+    font-size: 40px;
+}
+
+#Name>span {
+    margin: 15px;
+}
+
+#Name {
+    margin-top: 20px;
+}
+
+#summery {
+    margin-top: 20px;
+}
+
