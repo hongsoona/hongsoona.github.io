@@ -1,0 +1,1039 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>체중 변화 시뮬레이터</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* 레이아웃: 왼쪽은 입력 패널(데스크톱에서 고정), 오른쪽은 요약, 그래프 두 개, 표 순서. 좁은 화면에서는 한 열로 쌓는다. */
+:root {
+  --bg: #f1f4f2;
+  --surface: #fcfcfb;
+  --surface-2: #f4f7f5;
+  --ink: #14201c;
+  --ink-2: #44514b;
+  --ink-3: #5c6963;
+  --line: #d6ddd9;
+  --line-2: #e5eae7;
+  --accent: #256abf;
+  --accent-ink: #ffffff;
+  --accent-soft: #e4eefb;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --s4: #6250d6;
+  --band: rgba(20, 32, 28, 0.07);
+  --warn: #8a5200;
+  --warn-bg: #fff3d9;
+  --warn-line: #ecd39a;
+  --info: #1c4f8f;
+  --info-bg: #e7f0fb;
+  --info-line: #b9d1ee;
+  --danger: #9b2323;
+  --danger-bg: #fce9e8;
+  --danger-line: #efbab7;
+  --shadow: 0 6px 20px rgba(10, 20, 16, 0.12);
+  --font: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111413;
+    --surface: #1a1a19;
+    --surface-2: #212321;
+    --ink: #eceeea;
+    --ink-2: #c3cac4;
+    --ink-3: #9aa49d;
+    --line: #333835;
+    --line-2: #282c2a;
+    --accent: #5598e7;
+    --accent-ink: #0a131f;
+    --accent-soft: #1a2a3f;
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --s4: #9085e9;
+    --band: rgba(236, 238, 234, 0.08);
+    --warn: #e8b562;
+    --warn-bg: #2b2416;
+    --warn-line: #4b3e20;
+    --info: #86b6ef;
+    --info-bg: #16233a;
+    --info-line: #2c4466;
+    --danger: #f09a95;
+    --danger-bg: #301a19;
+    --danger-line: #5b2e2c;
+    --shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111413;
+  --surface: #1a1a19;
+  --surface-2: #212321;
+  --ink: #eceeea;
+  --ink-2: #c3cac4;
+  --ink-3: #9aa49d;
+  --line: #333835;
+  --line-2: #282c2a;
+  --accent: #5598e7;
+  --accent-ink: #0a131f;
+  --accent-soft: #1a2a3f;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --s4: #9085e9;
+  --band: rgba(236, 238, 234, 0.08);
+  --warn: #e8b562;
+  --warn-bg: #2b2416;
+  --warn-line: #4b3e20;
+  --info: #86b6ef;
+  --info-bg: #16233a;
+  --info-line: #2c4466;
+  --danger: #f09a95;
+  --danger-bg: #301a19;
+  --danger-line: #5b2e2c;
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.55;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+h1, h2, h3, p { margin: 0; }
+.head { display: flex; flex-direction: column; gap: 6px; margin-bottom: 22px; }
+.head h1 { font-size: clamp(23px, 3.6vw, 31px); font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+.head p { color: var(--ink-2); max-width: 62ch; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (min-width: 980px) {
+  .layout { grid-template-columns: 350px minmax(0, 1fr); gap: 22px; }
+  .panel { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); max-height: calc(100vh - 32px); overflow: auto; }
+}
+.results { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+.panel, .card, .settings {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.panel { padding: 18px; display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.group { display: flex; flex-direction: column; gap: 12px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.group > legend, .group-title {
+  font-size: 12.5px; font-weight: 600; color: var(--ink-3); letter-spacing: 0.03em; padding: 0; margin-bottom: 2px;
+}
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field > span.lab { font-size: 13px; color: var(--ink-2); }
+.hint { font-size: 12.5px; color: var(--ink-3); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.inp { position: relative; }
+.inp .u { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--ink-3); pointer-events: none; }
+input[type="number"], select {
+  width: 100%; height: 40px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
+  color: var(--ink); font-family: var(--mono); font-size: 15px; padding: 0 12px; min-width: 0;
+}
+select { font-family: var(--font); }
+.inp input { padding-right: 52px; }
+input[type="number"]:focus-visible, select:focus-visible, button:focus-visible, input[type="range"]:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 4px 0 0; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg label { position: relative; text-align: center; padding: 9px 6px; font-size: 14px; cursor: pointer; color: var(--ink-2); background: var(--surface); }
+.seg label + label { border-left: 1px solid var(--line); }
+.seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.seg label:has(input:checked) { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.pal-list { display: flex; flex-direction: column; gap: 6px; }
+.pal-opt {
+  display: grid; grid-template-columns: auto 52px minmax(0, 1fr); align-items: center; gap: 10px;
+  padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; background: var(--surface);
+}
+.pal-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.pal-opt input[type="radio"] { accent-color: var(--accent); margin: 0; }
+.pal-v { font-family: var(--mono); font-weight: 500; font-size: 15px; }
+.pal-t { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
+.pal-t b { font-weight: 600; font-size: 13.5px; }
+.pal-t small { color: var(--ink-3); font-size: 12px; }
+.pal-custom { grid-template-columns: auto minmax(0, 1fr) 84px; }
+.pal-custom input[type="number"] { height: 34px; padding: 0 8px; }
+
+.est-box { background: var(--surface-2); border: 1px solid var(--line-2); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: var(--ink-2); }
+.est-box b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
+.plan-box { background: var(--surface-2); border: 1px solid var(--line-2); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: var(--ink-2); }
+.plan-box b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 13px 15px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tile .k { font-size: 12.5px; color: var(--ink-3); }
+.tile .v { font-family: var(--mono); font-size: 25px; font-weight: 500; letter-spacing: -0.01em; line-height: 1.25; }
+.tile .v small { font-size: 13px; color: var(--ink-3); font-weight: 400; margin-left: 3px; }
+.tile .s { font-size: 12.5px; color: var(--ink-2); font-family: var(--mono); }
+.phase-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-size: 14px; color: var(--ink-2); }
+
+.notes { display: flex; flex-direction: column; gap: 8px; }
+.note { border: 1px solid; border-radius: 8px; padding: 10px 13px; font-size: 14px; line-height: 1.5; }
+.note.info { background: var(--info-bg); border-color: var(--info-line); color: var(--info); }
+.note.warn { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn); }
+.note.danger { background: var(--danger-bg); border-color: var(--danger-line); color: var(--danger); }
+.note b { font-weight: 600; }
+
+.card { padding: 16px 16px 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.card h2 { font-size: 16px; font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--ink-2); }
+.legend button { all: unset; cursor: pointer; display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 6px; font-size: 13px; color: var(--ink-2); }
+.legend button:hover { background: var(--surface-2); }
+.legend button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.legend button[aria-pressed="false"] { opacity: .45; text-decoration: line-through; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.legend i.ln { width: 16px; height: 0; border-radius: 0; border-top: 2px dashed var(--ink-2); vertical-align: 3px; background: none; }
+.legend i.bx { width: 14px; height: 10px; border-radius: 2px; }
+.chart { position: relative; width: 100%; min-width: 0; }
+.chart svg { display: block; max-width: 100%; }
+.tip {
+  position: absolute; pointer-events: none; z-index: 5; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 8px; box-shadow: var(--shadow); padding: 8px 10px; font-size: 12.5px; line-height: 1.55; min-width: 150px; white-space: nowrap;
+}
+.tip .t0 { font-weight: 600; margin-bottom: 2px; }
+.tip .tr { display: flex; justify-content: space-between; gap: 16px; color: var(--ink-2); }
+.tip .tr b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
+.tip .sw { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.ax { fill: var(--ink-3); font-size: 11.5px; font-family: var(--mono); }
+.axl { fill: var(--ink-2); font-size: 12px; font-family: var(--font); }
+.grid { stroke: var(--line-2); stroke-width: 1; shape-rendering: crispEdges; }
+.axis { stroke: var(--line); stroke-width: 1; shape-rendering: crispEdges; }
+.band { fill: var(--band); }
+.refl { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 4 4; }
+.cross { stroke: var(--ink-3); stroke-width: 1; }
+
+.card-tools { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; }
+.card-tools .field { width: 150px; }
+.btn {
+  height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface);
+  color: var(--ink); font-family: var(--font); font-size: 14px; cursor: pointer;
+}
+.btn:hover { background: var(--surface-2); }
+.btn.pri { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.pri:hover { filter: brightness(1.06); background: var(--accent); }
+.tablewrap { overflow: auto; max-height: 440px; border: 1px solid var(--line); border-radius: 8px; max-width: 100%; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { padding: 8px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line-2); }
+th { position: sticky; top: 0; background: var(--surface-2); color: var(--ink-2); font-weight: 600; font-size: 12.5px; z-index: 1; }
+td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; }
+th:last-child, td:last-child { text-align: left; font-family: var(--font); }
+tbody tr:hover { background: var(--surface-2); }
+tbody tr:last-child td { border-bottom: 0; }
+.pill { display: inline-block; font-size: 12px; padding: 1px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-2); background: var(--surface); font-family: var(--font); }
+.pill.p2 { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn); }
+.copy-msg { font-size: 12.5px; color: var(--ink-3); min-height: 1.2em; }
+
+.settings { padding: 0; margin-top: 18px; }
+.settings > summary { cursor: pointer; padding: 15px 18px; font-weight: 600; font-size: 15.5px; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.settings > summary::-webkit-details-marker { display: none; }
+.settings > summary::after { content: "열기"; font-size: 12.5px; font-weight: 400; color: var(--ink-3); }
+.settings[open] > summary::after { content: "닫기"; }
+.settings-body { padding: 4px 18px 20px; display: flex; flex-direction: column; gap: 22px; border-top: 1px solid var(--line-2); padding-top: 18px; }
+.sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.calib { font-size: 13.5px; color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line-2); border-radius: 8px; padding: 10px 13px; line-height: 1.7; }
+.calib b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
+.method { font-size: 13.5px; color: var(--ink-2); display: flex; flex-direction: column; gap: 6px; }
+.method code { font-family: var(--mono); font-size: 13px; background: var(--surface-2); border: 1px solid var(--line-2); border-radius: 5px; padding: 1px 6px; color: var(--ink); overflow-wrap: anywhere; }
+
+.warnsec { margin-top: 18px; background: var(--surface); border: 1px solid var(--danger-line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.warnsec h2 { font-size: 17px; font-weight: 700; color: var(--danger); }
+.warnsec .lead { color: var(--ink-2); font-size: 14px; max-width: 78ch; }
+.warnsec h3 { font-size: 15px; font-weight: 600; }
+.mybmi { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 14px; background: var(--danger-bg); border: 1px solid var(--danger-line); color: var(--danger); border-radius: 8px; padding: 9px 13px; }
+.mybmi b { font-family: var(--mono); font-weight: 500; }
+.bands { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.bands li { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 4px 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.bands li.on { border-color: var(--danger); background: var(--danger-bg); }
+.bands .bh { display: flex; flex-direction: column; gap: 2px; }
+.bands .bmi { font-family: var(--mono); font-size: 15px; font-weight: 500; }
+.bands .nm { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.bands .tx { font-size: 14px; color: var(--ink-2); line-height: 1.6; min-width: 0; }
+.bands .here { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--danger); }
+.warnsec .src { font-size: 12.5px; color: var(--ink-3); }
+@media (max-width: 640px) { .bands li { grid-template-columns: minmax(0, 1fr); } }
+.foot { margin-top: 18px; font-size: 12.5px; color: var(--ink-3); max-width: 80ch; }
+@media (max-width: 520px) {
+  .panel { padding: 15px; }
+  .tile .v { font-size: 22px; }
+  .row2 { gap: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <h1>체중 변화 시뮬레이터</h1>
+    <p>하루 섭취열량과 활동량을 넣으면 체중, 체지방, 제지방이 날마다 어떻게 변하는지 계산합니다. 체중이 줄면 소비열량도 함께 줄고, 지방이 내놓을 수 있는 에너지에는 한계가 있다는 점을 반영한 모형입니다.</p>
+  </header>
+
+  <div class="layout">
+    <form class="panel" id="inputs" onsubmit="return false" autocomplete="off">
+      <fieldset class="group">
+        <legend>몸 상태</legend>
+        <div class="row2">
+          <label class="field"><span class="lab">키</span>
+            <span class="inp"><input type="number" id="height" inputmode="decimal" min="100" max="230" step="1" value="175"><span class="u">cm</span></span></label>
+          <label class="field"><span class="lab">체중</span>
+            <span class="inp"><input type="number" id="weight" inputmode="decimal" min="30" max="300" step="0.1" value="80"><span class="u">kg</span></span></label>
+        </div>
+        <div class="field">
+          <span class="lab" id="bfmode-lab">체지방률</span>
+          <div class="seg" role="radiogroup" aria-labelledby="bfmode-lab">
+            <label><input type="radio" name="bfmode" value="known">알고 있어요</label>
+            <label><input type="radio" name="bfmode" value="est" checked>모르겠어요</label>
+          </div>
+        </div>
+        <label class="field" id="bf-known" hidden><span class="lab">체지방률</span>
+          <span class="inp"><input type="number" id="bfPct" inputmode="decimal" min="3" max="60" step="0.1" value="23"><span class="u">%</span></span></label>
+        <div class="row2" id="bf-est">
+          <label class="field"><span class="lab">성별</span>
+            <select id="sex"><option value="M" selected>남성</option><option value="F">여성</option></select></label>
+          <label class="field"><span class="lab">나이</span>
+            <span class="inp"><input type="number" id="age" inputmode="numeric" min="10" max="100" step="1" value="35"><span class="u">세</span></span></label>
+        </div>
+        <label class="field"><span class="lab">기초대사량 (선택)</span>
+          <span class="inp"><input type="number" id="rmrIn" inputmode="numeric" min="800" max="4000" step="10" placeholder="자동 계산"><span class="u">kcal</span></span>
+          <span class="hint">인바디 등 측정값이 있으면 입력하세요. 비우면 제지방으로 계산합니다.</span></label>
+        <div class="est-box" id="estBox" aria-live="polite"></div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>활동량 (PAL)</legend>
+        <div class="pal-list" id="palList"></div>
+        <p class="hint">PAL은 하루 총소비열량을 안정시 대사량으로 나눈 값입니다. 가장 가까운 설명을 고르세요.</p>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>계획</legend>
+        <label class="field"><span class="lab">하루 섭취열량</span>
+          <span class="inp"><input type="number" id="intake" inputmode="numeric" min="0" max="8000" step="50" value="1600"><span class="u">kcal</span></span>
+          <input type="range" id="intakeRange" min="800" max="3500" step="50" value="1600" aria-label="하루 섭취열량 슬라이더">
+        </label>
+        <div class="plan-box" id="planBox" aria-live="polite"></div>
+        <label class="field"><span class="lab">기간</span>
+          <span class="inp"><input type="number" id="days" inputmode="numeric" min="1" max="730" step="1" value="120"><span class="u">일</span></span></label>
+      </fieldset>
+    </form>
+
+    <main class="results">
+      <div class="tiles" id="tiles"></div>
+      <div class="phase-line" id="phaseLine"></div>
+      <div class="notes" id="notes"></div>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>체중과 체성분</h2>
+          <div class="legend" id="legend1"></div>
+        </div>
+        <div class="chart" id="chart1" role="img" aria-label="체중과 체성분 그래프"><div class="plot"></div><div class="tip" hidden></div></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>하루 열량 수지</h2>
+          <div class="legend" id="legend2"></div>
+        </div>
+        <div class="chart" id="chart2" role="img" aria-label="소비열량과 섭취열량 그래프"><div class="plot"></div><div class="tip" hidden></div></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>날짜별 표</h2>
+        </div>
+        <div class="card-tools">
+          <label class="field"><span class="lab">표시 간격</span>
+            <select id="step">
+              <option value="1">매일</option>
+              <option value="7" selected>7일마다</option>
+              <option value="14">14일마다</option>
+              <option value="30">30일마다</option>
+            </select></label>
+          <button type="button" class="btn" id="copyBtn">표 복사</button>
+          <span class="copy-msg" id="copyMsg" aria-live="polite"></span>
+        </div>
+        <div class="tablewrap"><table id="tbl"></table></div>
+      </section>
+    </main>
+  </div>
+
+  <section class="warnsec" id="warnsec" aria-labelledby="warn-h">
+    <h2 id="warn-h">저체중 구간 경고</h2>
+    <p class="lead">세계보건기구(WHO)와 정신의학계의 신경성 식욕부진증(DSM-5 기준) 중증도 분류를 기준으로 보면 각 구간의 신체 기능 상태는 다음과 같이 나뉩니다. 계산 결과의 체중이 이 구간에 들어간다면 그 계획은 실행하면 안 됩니다.</p>
+    <div class="mybmi" id="myBmi" aria-live="polite"></div>
+    <h3>BMI 구간별 임상적 분류와 일상생활 가능 여부</h3>
+    <ul class="bands" id="bands">
+      <li data-b="1"><div class="bh"><span class="bmi">BMI 17.0 ~ 18.4</span><span class="nm">경도 저체중</span></div>
+        <div class="tx">의학적으로는 저체중에 해당하나, 기초적인 신체 기능과 호르몬 대사가 어느 정도 유지되어 외견상 마른 상태로 일반적인 일상생활이 가능한 수준입니다. 패션 모델들의 평균적인 하한선이 이 부근에 걸쳐 있습니다.</div></li>
+      <li data-b="2"><div class="bh"><span class="bmi">BMI 16.0 ~ 16.9</span><span class="nm">중등도 저체중</span></div>
+        <div class="tx">피하지방이 거의 소실되고 근육 손실이 본격화됩니다. 만성 피로, 추위 민감성, 기립성 저혈압, 여성의 경우 무월경이 흔하게 나타나지만, 본인의 의지로 일상생활을 버텨낼 수는 있는 구간입니다.</div></li>
+      <li data-b="3"><div class="bh"><span class="bmi">BMI 15.0 ~ 15.9</span><span class="nm">중증 저체중 · 일상생활의 마지노선</span></div>
+        <div class="tx">골격근과 함께 심장 근육, 소화기관의 평활근까지 위축되기 시작합니다. 조금만 걸어도 숨이 차고, 앉았다 일어설 때 시야가 암전되며, 집중력과 인지 기능이 현저히 떨어집니다. '가까스로 일상생활을 유지한다'는 전제가 성립할 수 있는 사실상의 하한선입니다.</div></li>
+      <li data-b="4"><div class="bh"><span class="bmi">BMI 15.0 미만</span><span class="nm">극심한 저체중 · 의료적 응급 상태</span></div>
+        <div class="tx">임상적으로 통원 치료가 불가능하다고 판단하여 강제 입원이나 절대 안정(침상 안정)을 권고하는 기준선입니다. 체온 조절 능력이 상실되고, 서맥(느린 맥박), 부정맥, 전해질 불균형으로 인해 일상적인 활동 중 급성 심정지가 발생할 위험이 높습니다.</div></li>
+      <li data-b="5"><div class="bh"><span class="bmi">BMI 13.0 ~ 13.5 미만</span><span class="nm">생명 위협 및 아사 경계</span></div>
+        <div class="tx">장기 부전이 진행되는 단계입니다. 자력 보행 자체가 위험하며, 인체가 생존을 위해 뇌와 심장을 제외한 말초 기능을 차단하기 시작합니다.</div></li>
+    </ul>
+    <p class="src">위 내용은 첨부된 자료를 옮긴 것이며, 기준과 수치는 자료마다 다를 수 있고 의학적 진단이 아닙니다. 식사나 체중 때문에 힘들다면 혼자 감당하지 말고 의료진과 상담하세요.</p>
+  </section>
+
+  <details class="settings" id="settings">
+    <summary>세부 설정</summary>
+    <div class="settings-body">
+      <div class="method">
+        <div class="group-title">계산 방식</div>
+        <div>소비열량 <code>m = kP·P + kF·F + TEF·s + kW·(F+P) + A</code> 에서 적자 <code>d = m − s</code> 를 구합니다. (F 체지방, P 제지방, s 섭취열량)</div>
+        <div>지방이 하루에 내놓을 수 있는 에너지는 <code>rF·F</code> 입니다. <code>d ≤ rF·F</code> 이면 지방만 줄고(국면 1), 넘으면 지방은 한계 속도로 줄고 모자란 만큼 제지방이 줄어듭니다(국면 2).</div>
+        <div>활동 계수 kW는 입력한 체성분과 PAL에서 정합니다. 유지열량 = PAL × (kP·P₀ + kF·F₀) 가 되도록 맞춥니다. 적응성 열생성 A는 섭취 감소분의 β배를 향해 시간상수 τ로 따라갑니다. 하루를 0.1일 단위로 나눠 4차 룽게-쿠타법으로 적분합니다.</div>
+      </div>
+      <div class="calib" id="calib" aria-live="polite"></div>
+      <div class="group">
+        <div class="group-title">안정시 대사량 기준</div>
+        <label class="field" style="max-width:340px"><span class="lab">기초대사량을 입력하지 않았을 때</span>
+          <select id="rmrMode">
+            <option value="katch" selected>Katch-McArdle (제지방 기반)</option>
+            <option value="tissue">모형 원식 (kP·P + kF·F)</option>
+          </select>
+          <span class="hint">모형 원식은 같은 체격에서 표준식보다 약 15~20% 낮게 나옵니다.</span></label>
+      </div>
+      <div id="constGroups" style="display:flex;flex-direction:column;gap:22px"></div>
+      <div class="group">
+        <div class="group-title">활동계수(PAL) 표</div>
+        <div class="sgrid" id="palTable"></div>
+      </div>
+      <div><button type="button" class="btn" id="resetBtn">세부 설정 초기화</button></div>
+    </div>
+  </details>
+
+  <p class="foot">상수는 문헌 평균값을 기본으로 둔 것이라 개인차가 큽니다. 수분과 글리코겐 변동, 호르몬과 질환, 약물, 근력운동에 따른 제지방 증가는 반영하지 않습니다. 섭취가 소비보다 많은 경우 늘어난 열량은 모두 체지방으로 계산합니다. 추세를 이해하기 위한 단순 모형이며 개인 처방에는 쓸 수 없습니다.</p>
+</div>
+
+<script>
+/* ===== 모형 계산부 (순수 함수) ===== */
+var DEFAULT_CONSTS = {
+  fc: 7700,     // 체지방 1kg 열량 (kcal/kg)
+  pc: 1400,     // 제지방 1kg 열량 (kcal/kg)
+  rF: 70,       // 지방 방출 한계 (kcal/kg/일)
+  kP: 22,       // 제지방 안정시 대사율 (kcal/kg/일)
+  kF: 3.2,      // 체지방 안정시 대사율 (kcal/kg/일)
+  tef: 0.10,    // 식이성 열생성 비율
+  beta: 0.14,   // 적응성 열생성 비율
+  tau: 14,      // 적응성 열생성 시간상수 (일)
+  bfA: 1.20,    // 체지방률 추정: BMI 계수
+  bfB: 0.23,    //                 나이 계수
+  bfC: 10.8,    //                 성별(남=1) 계수
+  bfD: 5.4,     //                 절편
+  katA: 370,    // 안정시 대사량 기준(Katch-McArdle): 절편 (kcal)
+  katB: 21.6    //                                  제지방 계수 (kcal/kg)
+};
+
+var DEFAULT_PAL = [1.2, 1.375, 1.55, 1.725, 1.9];
+
+/* Deurenberg 식: 체지방률(%) = a·BMI + b·나이 − c·성별(남1/여0) − d */
+function estimateBodyFatPct(p, c) {
+  var h = p.heightCm / 100;
+  var bmi = p.weightKg / (h * h);
+  var pct = c.bfA * bmi + c.bfB * p.age - c.bfC * (p.sex === 'M' ? 1 : 0) - c.bfD;
+  return Math.min(60, Math.max(3, pct));
+}
+
+/* 초기 체성분, 안정시 대사량 기준값, 활동계수(PAL)로 계수를 보정한다.
+   rmrTarget(kcal)을 주면 초기 안정시 대사량이 그 값이 되도록 고정 항 c0를 둔다.
+   (조직별 기울기 kP, kF는 그대로여서 체성분이 변할 때의 변화율은 유지된다.)
+   유지열량 M0 = PAL × RMR0, 유지 상태에서 m = M0 가 되도록 kW를 정한다. */
+function calibrate(w0, F0, pal, c, rmrTarget) {
+  var P0 = w0 - F0;
+  var tissue = c.kP * P0 + c.kF * F0;
+  var rmr0 = (rmrTarget != null) ? rmrTarget : tissue;
+  var c0 = rmr0 - tissue;
+  var M0 = pal * rmr0;
+  var kW = (M0 * (1 - c.tef) - rmr0) / w0;
+  return { P0: P0, rmr0: rmr0, M0: M0, kW: kW, c0: c0, tissue: tissue };
+}
+
+/* 상태 (F, P, A)의 시간 미분. phase 1: 지방만, 2: 제지방도 소모 */
+function deriv(F, P, A, s, cal, c) {
+  var m = c.kP * P + c.kF * F + cal.c0 + c.tef * s + cal.kW * (F + P) + A;
+  var d = m - s;
+  var fatMax = c.rF * F;
+  var dF, dP, phase;
+  if (d <= fatMax) {
+    dF = -d / c.fc; dP = 0; phase = 1;
+  } else {
+    dF = -(c.rF / c.fc) * F;
+    dP = -(d - fatMax) / c.pc;
+    phase = 2;
+  }
+  var dA = -(A + c.beta * (cal.M0 - s)) / c.tau;
+  return { dF: dF, dP: dP, dA: dA, m: m, d: d, phase: phase };
+}
+
+/* RK4 적분. 하루 단위로 기록한다. */
+function simulate(w0, F0, s, days, pal, c, opts) {
+  opts = opts || {};
+  var cal = calibrate(w0, F0, pal, c, opts.rmrTarget);
+  var sub = opts.sub || 10;        // 하루를 나눌 횟수
+  var h = 1 / sub;
+  var F = F0, P = cal.P0, A = 0;
+  var rows = [];
+  var stopped = null;
+
+  function record(day) {
+    var q = deriv(F, P, A, s, cal, c);
+    rows.push({ day: day, w: F + P, F: F, P: P, A: A, m: q.m, d: q.d, phase: q.phase });
+  }
+  record(0);
+
+  for (var day = 1; day <= days; day++) {
+    for (var i = 0; i < sub; i++) {
+      var k1 = deriv(F, P, A, s, cal, c);
+      var k2 = deriv(F + 0.5 * h * k1.dF, P + 0.5 * h * k1.dP, A + 0.5 * h * k1.dA, s, cal, c);
+      var k3 = deriv(F + 0.5 * h * k2.dF, P + 0.5 * h * k2.dP, A + 0.5 * h * k2.dA, s, cal, c);
+      var k4 = deriv(F + h * k3.dF, P + h * k3.dP, A + h * k3.dA, s, cal, c);
+      F += h / 6 * (k1.dF + 2 * k2.dF + 2 * k3.dF + k4.dF);
+      P += h / 6 * (k1.dP + 2 * k2.dP + 2 * k3.dP + k4.dP);
+      A += h / 6 * (k1.dA + 2 * k2.dA + 2 * k3.dA + k4.dA);
+    }
+    if (P < 10 || F < 0.3) { stopped = day; break; }
+    record(day);
+  }
+  return { cal: cal, rows: rows, stoppedAt: stopped };
+}
+
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var C0 = DEFAULT_CONSTS;
+
+  var CONST_DEFS = [
+    { g: '에너지 환산', items: [
+      { k: 'fc', l: '체지방 1kg 열량', u: 'kcal/kg', step: 100, h: '기본 7700' },
+      { k: 'pc', l: '제지방 1kg 열량', u: 'kcal/kg', step: 50, h: '기본 1400' },
+      { k: 'rF', l: '지방 방출 한계', u: 'kcal/kg·일', step: 1, h: '지방 1kg이 하루에 내는 최대 에너지' }
+    ] },
+    { g: '대사량 계수', items: [
+      { k: 'kP', l: '제지방 대사율 kP', u: 'kcal/kg·일', step: 0.5, h: '안정시 대사, 기본 22' },
+      { k: 'kF', l: '체지방 대사율 kF', u: 'kcal/kg·일', step: 0.1, h: '안정시 대사, 기본 3.2' },
+      { k: 'tef', l: '식이성 열생성 TEF', u: '섭취 대비', step: 0.01, h: '0.10은 섭취열량의 10%' }
+    ] },
+    { g: '적응성 열생성', items: [
+      { k: 'beta', l: '감소 비율 β', u: '섭취 감소 대비', step: 0.01, h: '기본 0.14, 0이면 끔' },
+      { k: 'tau', l: '시간상수 τ', u: '일', step: 1, h: '클수록 천천히 반응' }
+    ] },
+    { g: 'Katch-McArdle 안정시 대사량', items: [
+      { k: 'katA', l: '절편', u: 'kcal', step: 5, h: 'RMR = 절편 + 계수 × 제지방' },
+      { k: 'katB', l: '제지방 계수', u: 'kcal/kg', step: 0.1, h: '' }
+    ] },
+    { g: '체지방률 추정식 (Deurenberg)', items: [
+      { k: 'bfA', l: 'BMI 계수', u: '', step: 0.01, h: '체지방률 = a·BMI + b·나이 − c·성별 − d' },
+      { k: 'bfB', l: '나이 계수', u: '', step: 0.01, h: '' },
+      { k: 'bfC', l: '성별 계수 (남성 1)', u: '', step: 0.1, h: '' },
+      { k: 'bfD', l: '절편', u: '', step: 0.1, h: '' }
+    ] }
+  ];
+  var PAL_META = [
+    { n: '좌식', d: '운동 거의 없음, 대부분 앉아서 생활' },
+    { n: '가벼운 활동', d: '주 1~3회 가벼운 운동' },
+    { n: '보통 활동', d: '주 3~5회 중간 강도 운동' },
+    { n: '활발', d: '주 6~7회 운동, 서서 일하는 직업' },
+    { n: '매우 활발', d: '하루 2회 훈련, 육체노동 직업' }
+  ];
+  var STORE_KEY = 'wsim-v1';
+  var SIMPLE_IDS = ['rmrIn', 'rmrMode', 'height', 'weight', 'bfPct', 'sex', 'age', 'intake', 'days', 'step', 'palCustom'];
+  var lastChartCfg = {};
+  var lastTableText = '';
+  var hidden1 = {};
+
+  /* ---------- 숫자 서식 ---------- */
+  function fmt(v, d) {
+    return Number(v).toLocaleString('ko-KR', { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+  function sgn(v, d) {
+    var s = fmt(Math.abs(v), d);
+    if (Math.abs(v) < Math.pow(10, -d) / 2) return s;
+    return (v < 0 ? '−' : '+') + s;
+  }
+  function trimNum(v) { return String(+Number(v).toFixed(3)); }
+
+  /* ---------- 세부 설정 화면 ---------- */
+  function buildSettings() {
+    var host = $('constGroups');
+    var html = '';
+    CONST_DEFS.forEach(function (g) {
+      html += '<div class="group"><div class="group-title">' + g.g + '</div><div class="sgrid">';
+      g.items.forEach(function (it) {
+        html += '<label class="field"><span class="lab">' + it.l + '</span><span class="inp">' +
+          '<input type="number" id="c_' + it.k + '" step="' + it.step + '" value="' + C0[it.k] + '">' +
+          (it.u ? '<span class="u">' + it.u + '</span>' : '') + '</span>' +
+          (it.h ? '<span class="hint">' + it.h + '</span>' : '') + '</label>';
+      });
+      html += '</div></div>';
+    });
+    host.innerHTML = html;
+
+    var ph = '';
+    PAL_META.forEach(function (p, i) {
+      ph += '<label class="field"><span class="lab">' + p.n + '</span><span class="inp">' +
+        '<input type="number" id="pal_' + i + '" step="0.025" value="' + DEFAULT_PAL[i] + '"></span></label>';
+    });
+    $('palTable').innerHTML = ph;
+  }
+
+  function palTable() {
+    return PAL_META.map(function (p, i) {
+      var x = parseFloat($('pal_' + i).value);
+      return isFinite(x) && x > 0.5 && x < 4 ? x : DEFAULT_PAL[i];
+    });
+  }
+
+  function currentPalSel() {
+    var r = document.querySelector('input[name="pal"]:checked');
+    return r ? r.value : '1';
+  }
+
+  function renderPal(sel) {
+    if (sel == null) sel = currentPalSel();
+    var tbl = palTable();
+    var customVal = $('palCustom') ? $('palCustom').value : '1.6';
+    var html = '';
+    PAL_META.forEach(function (p, i) {
+      html += '<label class="pal-opt"><input type="radio" name="pal" value="' + i + '"' + (sel === String(i) ? ' checked' : '') + '>' +
+        '<span class="pal-v">' + trimNum(tbl[i]) + '</span>' +
+        '<span class="pal-t"><b>' + p.n + '</b><small>' + p.d + '</small></span></label>';
+    });
+    html += '<label class="pal-opt pal-custom"><input type="radio" name="pal" value="c"' + (sel === 'c' ? ' checked' : '') + '>' +
+      '<span class="pal-t"><b>직접 입력</b></span>' +
+      '<input type="number" id="palCustom" min="1" max="3" step="0.01" value="' + customVal + '" aria-label="PAL 직접 입력"></label>';
+    $('palList').innerHTML = html;
+  }
+
+  /* ---------- 입력 읽기 ---------- */
+  function readAll() {
+    var errs = [];
+    function num(id, label, min, max) {
+      var v = parseFloat($(id).value);
+      if (!isFinite(v) || v < min || v > max) { errs.push(label + ' ' + min + '~' + max); return null; }
+      return v;
+    }
+    var v = {};
+    v.height = num('height', '키', 100, 230);
+    v.weight = num('weight', '체중', 30, 300);
+    v.mode = document.querySelector('input[name="bfmode"]:checked').value;
+    if (v.mode === 'known') { v.bfPct = num('bfPct', '체지방률', 3, 60); }
+    else { v.age = num('age', '나이', 10, 100); v.sex = $('sex').value; }
+    v.intake = num('intake', '섭취열량', 0, 8000);
+    v.days = num('days', '기간', 1, 730);
+    if (v.days != null) v.days = Math.round(v.days);
+    v.step = parseInt($('step').value, 10);
+
+    var tbl = palTable();
+    var sel = currentPalSel();
+    if (sel === 'c') { v.pal = num('palCustom', 'PAL', 1, 3); } else { v.pal = tbl[parseInt(sel, 10)]; }
+
+    var c = {};
+    CONST_DEFS.forEach(function (g) {
+      g.items.forEach(function (it) {
+        var x = parseFloat($('c_' + it.k).value);
+        if (!isFinite(x)) { errs.push(it.l); x = C0[it.k]; }
+        c[it.k] = x;
+      });
+    });
+    if (c.fc <= 0 || c.pc <= 0 || c.tau <= 0) {
+      errs.push('열량 환산값과 시간상수는 0보다 커야 합니다');
+      c.fc = c.fc > 0 ? c.fc : C0.fc; c.pc = c.pc > 0 ? c.pc : C0.pc; c.tau = c.tau > 0 ? c.tau : C0.tau;
+    }
+    return { v: v, c: c, errs: errs };
+  }
+
+  /* ---------- 차트 유틸 ---------- */
+  function niceNum(x) {
+    var e = Math.floor(Math.log10(x)), f = x / Math.pow(10, e);
+    var n = f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10;
+    return n * Math.pow(10, e);
+  }
+  function niceTicks(lo, hi, n) {
+    var step = niceNum((hi - lo) / n);
+    var t0 = Math.floor(lo / step) * step;
+    var ticks = [];
+    for (var t = t0; t <= hi + step * 0.5; t += step) ticks.push(+t.toFixed(10));
+    return ticks;
+  }
+  function dayTicks(N) {
+    var cands = [1, 2, 5, 7, 10, 14, 20, 30, 45, 60, 90, 120, 180];
+    var step = cands[cands.length - 1];
+    for (var i = 0; i < cands.length; i++) { if (N / cands[i] <= 7) { step = cands[i]; break; } }
+    var t = [];
+    for (var d = 0; d <= N; d += step) t.push(d);
+    return t;
+  }
+  function esc(s) { return String(s); }
+
+  function drawChart(hostId, cfg) {
+    var host = $(hostId);
+    var plot = host.querySelector('.plot');
+    var tip = host.querySelector('.tip');
+    lastChartCfg[hostId] = cfg;
+    cfg = Object.assign({}, cfg);
+    var W = Math.max(280, Math.floor(host.clientWidth || 640));
+    var H = W < 520 ? 250 : 300;
+    var m = { l: 50, r: W < 520 ? 74 : 88, t: 16, b: 30 };
+    var pw = W - m.l - m.r, ph = H - m.t - m.b;
+    var rows = cfg.rows, N = Math.max(1, rows[rows.length - 1].day);
+
+    var lo = Infinity, hi = -Infinity;
+    cfg.series = cfg.series.filter(function (s) { return !(cfg.hidden && cfg.hidden[s.id]); });
+    cfg.series.forEach(function (s) { rows.forEach(function (r) { var q = s.get(r); if (q < lo) lo = q; if (q > hi) hi = q; }); });
+    var span = Math.max(hi - lo, 1e-6);
+    if (cfg.minSpan && span < cfg.minSpan) { var mid = (hi + lo) / 2; lo = mid - cfg.minSpan / 2; hi = mid + cfg.minSpan / 2; span = cfg.minSpan; }
+    var yt = niceTicks(lo - span * 0.06, hi + span * 0.08, 5);
+    var y0 = yt[0], y1 = yt[yt.length - 1];
+    var X = function (d) { return m.l + d / N * pw; };
+    var Y = function (v) { return m.t + (1 - (v - y0) / (y1 - y0)) * ph; };
+
+    var g = '';
+    // 가로 눈금
+    yt.forEach(function (t) {
+      g += '<line class="grid" x1="' + m.l + '" x2="' + (m.l + pw) + '" y1="' + Y(t) + '" y2="' + Y(t) + '"/>';
+      g += '<text class="ax" x="' + (m.l - 8) + '" y="' + (Y(t) + 4) + '" text-anchor="end">' + fmt(t, cfg.yDec || 0) + '</text>';
+    });
+    // 세로 눈금
+    dayTicks(N).forEach(function (d) {
+      g += '<text class="ax" x="' + X(d) + '" y="' + (H - 9) + '" text-anchor="' + (d === 0 ? 'start' : d === N ? 'end' : 'middle') + '">' + d + (d === 0 ? '일' : '') + '</text>';
+    });
+    g += '<line class="axis" x1="' + m.l + '" x2="' + (m.l + pw) + '" y1="' + (m.t + ph) + '" y2="' + (m.t + ph) + '"/>';
+
+    // 국면 2 구간
+    if (cfg.bands) {
+      var start = null;
+      for (var i = 0; i <= rows.length; i++) {
+        var p2 = i < rows.length && rows[i].phase === 2;
+        if (p2 && start === null) start = rows[i].day;
+        if (!p2 && start !== null) {
+          var end = rows[i - 1].day;
+          if (end === start) end = Math.min(N, start + 0.5);
+          g += '<rect class="band" x="' + X(start) + '" y="' + m.t + '" width="' + Math.max(1, X(end) - X(start)) + '" height="' + ph + '"/>';
+          start = null;
+        }
+      }
+    }
+    // 두 선 사이 채움
+    if (cfg.fill) {
+      var up = '', dn = '';
+      rows.forEach(function (r) { up += X(r.day).toFixed(1) + ',' + Y(cfg.fill.top(r)).toFixed(1) + ' '; });
+      for (var j = rows.length - 1; j >= 0; j--) { dn += X(rows[j].day).toFixed(1) + ',' + Y(cfg.fill.bottom(rows[j])).toFixed(1) + ' '; }
+      g += '<polygon points="' + up + dn + '" style="fill:' + cfg.fill.css + ';opacity:.22"/>';
+    }
+    // 기준선
+    if (cfg.ref && cfg.ref.value > y0 && cfg.ref.value < y1) {
+      var ry = Y(cfg.ref.value);
+      g += '<line class="refl" x1="' + m.l + '" x2="' + (m.l + pw) + '" y1="' + ry + '" y2="' + ry + '"/>';
+      g += '<text class="axl" x="' + (m.l + 6) + '" y="' + (ry - 5) + '">' + cfg.ref.label + '</text>';
+    }
+    // 선
+    cfg.series.forEach(function (s) {
+      var pts = rows.map(function (r) { return X(r.day).toFixed(1) + ',' + Y(s.get(r)).toFixed(1); }).join(' ');
+      g += '<polyline points="' + pts + '" fill="none" style="stroke:' + s.css + '" stroke-width="' + (s.w || 2) + '" stroke-linejoin="round" stroke-linecap="round"' + (s.dash ? ' stroke-dasharray="' + s.dash + '"' : '') + '/>';
+    });
+    // 끝점과 직접 라벨
+    var last = rows[rows.length - 1];
+    var labs = cfg.series.map(function (s) { return { y: Y(s.get(last)), s: s, v: s.get(last) }; });
+    labs.sort(function (a, b) { return a.y - b.y; });
+    for (var k = 1; k < labs.length; k++) { if (labs[k].y - labs[k - 1].y < 15) labs[k].y = labs[k - 1].y + 15; }
+    labs.forEach(function (L) {
+      g += '<circle cx="' + X(last.day) + '" cy="' + Y(L.v) + '" r="4" style="fill:' + L.s.css + ';stroke:var(--surface)" stroke-width="2"/>';
+      g += '<text class="axl" x="' + (X(last.day) + 10) + '" y="' + (L.y + 4) + '">' + L.s.name + ' <tspan class="ax">' + fmt(L.v, cfg.yDec || 0) + '</tspan></text>';
+    });
+    // 호버 층
+    g += '<g class="hv" style="display:none"><line class="cross" x1="0" x2="0" y1="' + m.t + '" y2="' + (m.t + ph) + '"/>';
+    cfg.series.forEach(function (s, si) { g += '<circle class="hc" data-i="' + si + '" r="4.5" cx="0" cy="0" style="fill:' + s.css + ';stroke:var(--surface)" stroke-width="2"/>'; });
+    g += '</g>';
+    g += '<rect class="ov" x="' + m.l + '" y="' + m.t + '" width="' + pw + '" height="' + ph + '" fill="transparent" style="touch-action:pan-y;cursor:crosshair"/>';
+
+    plot.innerHTML = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" focusable="false">' + g + '</svg>';
+
+    var svg = plot.firstChild, ov = svg.querySelector('.ov'), hv = svg.querySelector('.hv');
+    var cross = hv.querySelector('.cross'), dots = hv.querySelectorAll('.hc');
+    function show(e) {
+      var rect = ov.getBoundingClientRect();
+      var px = e.clientX - rect.left;
+      var day = Math.round(Math.min(Math.max(px, 0), pw) / pw * N);
+      var r = rows[Math.min(day, rows.length - 1)];
+      var x = X(r.day);
+      hv.style.display = '';
+      cross.setAttribute('x1', x); cross.setAttribute('x2', x);
+      cfg.series.forEach(function (s, si) { dots[si].setAttribute('cx', x); dots[si].setAttribute('cy', Y(s.get(r))); });
+      tip.innerHTML = cfg.tip(r);
+      tip.hidden = false;
+      var tw = tip.offsetWidth;
+      var left = x + 14;
+      if (left + tw > W - 4) left = x - 14 - tw;
+      tip.style.left = Math.max(4, left) + 'px';
+      tip.style.top = (m.t + 6) + 'px';
+    }
+    function hide() { hv.style.display = 'none'; tip.hidden = true; }
+    ov.addEventListener('pointermove', show);
+    ov.addEventListener('pointerdown', show);
+    ov.addEventListener('pointerleave', hide);
+    ov.addEventListener('pointercancel', hide);
+  }
+
+  /* ---------- 표 ---------- */
+  function buildTable(rows, h2, step) {
+    var idx = [];
+    for (var d = 0; d < rows.length; d += step) idx.push(d);
+    if (idx[idx.length - 1] !== rows.length - 1) idx.push(rows.length - 1);
+    var heads = ['일차', '체중 (kg)', 'BMI', '체지방 (kg)', '제지방 (kg)', '체지방률 (%)', '소비열량 (kcal)', '적자 (kcal)', '국면'];
+    var w0 = rows[0].w;
+    var html = '<thead><tr>' + heads.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>';
+    var text = heads.join('\t') + '\n';
+    idx.forEach(function (i) {
+      var r = rows[i];
+      var cells = [r.day, fmt(r.w, 1), fmt(r.w / h2, 1), fmt(r.F, 1), fmt(r.P, 1), fmt(r.F / r.w * 100, 1), fmt(r.m, 0), fmt(r.d, 0)];
+      var ph = r.phase === 2 ? '제지방 소모' : '지방만';
+      html += '<tr><td>' + r.day + '일</td>' + cells.slice(1).map(function (c) { return '<td>' + c + '</td>'; }).join('') +
+        '<td><span class="pill' + (r.phase === 2 ? ' p2' : '') + '">' + ph + '</span></td></tr>';
+      text += cells.join('\t') + '\t' + ph + '\n';
+    });
+    $('tbl').innerHTML = html + '</tbody>';
+    lastTableText = text;
+  }
+
+  /* ---------- 메인 갱신 ---------- */
+  function update() {
+    var R = readAll(), v = R.v, c = R.c;
+    var notes = [];
+    if (R.errs.length || v.height == null || v.weight == null || v.intake == null || v.days == null ||
+        (v.mode === 'known' && v.bfPct == null) || (v.mode === 'est' && v.age == null) || v.pal == null) {
+      $('notes').innerHTML = '<div class="note warn"><b>입력값을 확인해 주세요.</b> ' + R.errs.join(', ') + '</div>';
+      return;
+    }
+    var pct = v.mode === 'known' ? v.bfPct : estimateBodyFatPct({ sex: v.sex, age: v.age, heightCm: v.height, weightKg: v.weight }, c);
+    var F0 = v.weight * pct / 100, P0 = v.weight - F0;
+    var h2 = Math.pow(v.height / 100, 2);
+
+    $('bf-known').hidden = v.mode !== 'known';
+    $('bf-est').hidden = v.mode !== 'est';
+    $('estBox').innerHTML = (v.mode === 'est' ? '추정 체지방률 <b>' + fmt(pct, 1) + '%</b> · 오차 ±4~5%p 가능<br>' : '') +
+      '체지방 <b>' + fmt(F0, 1) + ' kg</b> · 제지방 <b>' + fmt(P0, 1) + ' kg</b> · BMI <b>' + fmt(v.weight / h2, 1) + '</b>';
+
+    var rmrIn = parseFloat($('rmrIn').value), rmrTarget = null, rmrSrc = '모형 원식';
+    if (isFinite(rmrIn) && rmrIn >= 800 && rmrIn <= 4000) { rmrTarget = rmrIn; rmrSrc = '입력값'; }
+    else if ($('rmrMode').value === 'katch') { rmrTarget = c.katA + c.katB * P0; rmrSrc = 'Katch-McArdle'; }
+    var S = simulate(v.weight, F0, v.intake, v.days, v.pal, c, { rmrTarget: rmrTarget });
+    var rows = S.rows, cal = S.cal, first = rows[0], last = rows[rows.length - 1];
+    var d0 = first.d;
+    $('planBox').innerHTML = '유지열량 <b>' + fmt(cal.M0, 0) + ' kcal</b> · 안정시 대사 <b>' + fmt(cal.rmr0, 0) + ' kcal</b> <small>(' + rmrSrc + ')</small><br>' +
+      '첫날 ' + (d0 >= 0 ? '적자' : '잉여') + ' <b>' + fmt(Math.abs(d0), 0) + ' kcal</b>';
+
+    var tiles = [
+      { k: last.day + '일 뒤 체중', v: fmt(last.w, 1), u: 'kg', s: sgn(last.w - first.w, 1) + ' kg · ' + sgn((last.w - first.w) / first.w * 100, 1) + '%' },
+      { k: '체지방', v: fmt(last.F, 1), u: 'kg', s: sgn(last.F - first.F, 1) + ' kg · 체지방률 ' + fmt(last.F / last.w * 100, 1) + '%' },
+      { k: '제지방', v: fmt(last.P, 1), u: 'kg', s: sgn(last.P - first.P, 1) + ' kg' },
+      { k: '소비열량 (처음 → 끝)', v: fmt(last.m, 0), u: 'kcal', s: '처음 ' + fmt(first.m, 0) + ' kcal' }
+    ];
+    $('tiles').innerHTML = tiles.map(function (t) {
+      return '<div class="tile"><span class="k">' + t.k + '</span><span class="v">' + t.v + '<small>' + t.u + '</small></span><span class="s">' + t.s + '</span></div>';
+    }).join('');
+
+    var p2 = null;
+    for (var i = 0; i < rows.length; i++) { if (rows[i].phase === 2) { p2 = rows[i]; break; } }
+    var pl;
+    if (!p2) pl = '<span class="pill">국면 1</span> 기간 내내 지방만 소모됩니다.';
+    else if (p2.day === 0) pl = '<span class="pill p2">국면 2</span> 처음부터 적자가 지방 방출 한계를 넘어 제지방도 소모됩니다.';
+    else pl = '<span class="pill">국면 1</span> ' + p2.day + '일째까지 지방만 소모 <span class="pill p2">국면 2</span> 이후 제지방도 소모됩니다.';
+    $('phaseLine').innerHTML = pl;
+
+    // 안내
+    if (cal.kW < 0) notes.push({ t: 'warn', h: '<b>활동계수가 너무 낮습니다.</b> 이 PAL에서는 활동 항 kW가 음수가 됩니다. 활동 수준을 올리거나 대사량 상수를 확인하세요.' });
+    if (v.intake >= cal.M0) notes.push({ t: 'info', h: '<b>섭취열량이 유지열량 이상입니다.</b> 모형은 남는 열량을 모두 체지방으로 계산하고 제지방 증가는 반영하지 않습니다.' });
+    if (v.intake < cal.rmr0 && v.intake > 0) notes.push({ t: 'warn', h: '<b>섭취열량이 안정시 대사량(' + fmt(cal.rmr0, 0) + ' kcal)보다 낮습니다.</b> 이 수준을 오래 유지하는 계획은 모형의 신뢰 범위를 벗어나고 건강에도 위험합니다.' });
+    var low = null, vlow = null;
+    for (var j = 0; j < rows.length; j++) {
+      var b = rows[j].w / h2;
+      if (low === null && b < 18.5) low = rows[j];
+      if (vlow === null && b < 16) vlow = rows[j];
+    }
+    if (vlow && !(vlow.day === 0)) notes.push({ t: 'danger', h: '<b>' + vlow.day + '일째에 BMI가 16 아래로 내려갑니다.</b> 심각한 저체중 구간이며 이후 값은 모형으로 믿기 어렵습니다.' });
+    else if (low && low.day > 0) notes.push({ t: 'warn', h: '<b>' + low.day + '일째에 BMI가 18.5 아래로 내려갑니다.</b> 저체중 구간에 들어가면 모형의 정확도가 떨어집니다.' });
+    else if (low && low.day === 0) notes.push({ t: 'warn', h: '<b>시작 BMI가 이미 18.5 미만입니다.</b> 감량 계획에는 맞지 않을 수 있습니다.' });
+    if (S.stoppedAt != null) notes.push({ t: 'danger', h: '<b>' + S.stoppedAt + '일째에 제지방이 10kg 아래로 떨어져 계산을 중단했습니다.</b> 그래프와 표는 그 전날까지 표시합니다.' });
+    $('notes').innerHTML = notes.map(function (n) { return '<div class="note ' + n.t + '">' + n.h + '</div>'; }).join('');
+
+
+    // 저체중 구간 경고: 이번 계획의 최저 BMI가 속한 구간 강조
+    var minB = Infinity, minDay = 0;
+    rows.forEach(function (r) { var b = r.w / h2; if (b < minB) { minB = b; minDay = r.day; } });
+    var band = minB >= 18.5 ? 0 : minB >= 17 ? 1 : minB >= 16 ? 2 : minB >= 15 ? 3 : minB >= 13.5 ? 4 : 5;
+    var bandNames = ['', '경도 저체중', '중등도 저체중', '중증 저체중', '극심한 저체중', '생명 위협 및 아사 경계'];
+    Array.prototype.forEach.call(document.querySelectorAll('#bands li'), function (li) {
+      var on = li.getAttribute('data-b') === String(band) || (band === 5 && li.getAttribute('data-b') === '4');
+      li.classList.toggle('on', on);
+      var old = li.querySelector('.here'); if (old) old.remove();
+      if (on) { var sp = document.createElement('span'); sp.className = 'here'; sp.textContent = '이번 계획의 최저 BMI가 이 구간입니다'; li.querySelector('.bh').appendChild(sp); }
+    });
+    $('myBmi').innerHTML = band === 0
+      ? '이번 계획의 최저 BMI는 <b>' + fmt(minB, 1) + '</b> (' + minDay + '일째)로 저체중 기준(18.5) 위입니다. 그래도 이 값이 건강한 체중이라는 뜻은 아닙니다.'
+      : '이번 계획의 최저 BMI는 <b>' + fmt(minB, 1) + '</b> (' + minDay + '일째), <b>' + bandNames[band] + '</b> 구간입니다. 섭취열량이나 기간을 조정하세요.';
+
+    // 그래프 1
+    var bmi185 = 18.5 * h2;
+    $('legend1').innerHTML =
+      [['w', 'var(--s1)', '체중'], ['P', 'var(--s3)', '제지방'], ['F', 'var(--s2)', '체지방']].map(function (x) {
+        return '<button type="button" data-k="' + x[0] + '" aria-pressed="' + (hidden1[x[0]] ? 'false' : 'true') + '"><i style="background:' + x[1] + '"></i>' + x[2] + '</button>';
+      }).join('') +
+      (p2 ? '<span><i class="bx" style="background:var(--band);border:1px solid var(--line)"></i>제지방 소모 구간</span>' : '');
+    drawChart('chart1', {
+      rows: rows, yDec: 0, bands: true, hidden: hidden1,
+      ref: { value: bmi185, label: 'BMI 18.5 = ' + fmt(bmi185, 1) + 'kg' },
+      series: [
+        { id: 'w', name: '체중', css: 'var(--s1)', w: 2.5, get: function (r) { return r.w; } },
+        { id: 'P', name: '제지방', css: 'var(--s3)', get: function (r) { return r.P; } },
+        { id: 'F', name: '체지방', css: 'var(--s2)', get: function (r) { return r.F; } }
+      ],
+      tip: function (r) {
+        return '<div class="t0">' + r.day + '일차</div>' +
+          '<div class="tr"><span><i class="sw" style="background:var(--s1)"></i>체중</span><b>' + fmt(r.w, 1) + ' kg</b></div>' +
+          '<div class="tr"><span><i class="sw" style="background:var(--s3)"></i>제지방</span><b>' + fmt(r.P, 1) + ' kg</b></div>' +
+          '<div class="tr"><span><i class="sw" style="background:var(--s2)"></i>체지방</span><b>' + fmt(r.F, 1) + ' kg</b></div>' +
+          '<div class="tr"><span>체지방률</span><b>' + fmt(r.F / r.w * 100, 1) + '%</b></div>' +
+          '<div class="tr"><span>BMI</span><b>' + fmt(r.w / h2, 1) + '</b></div>';
+      }
+    });
+    $('chart1').setAttribute('aria-label', last.day + '일 동안 체중이 ' + fmt(first.w, 1) + 'kg에서 ' + fmt(last.w, 1) + 'kg으로, 체지방은 ' + fmt(first.F, 1) + 'kg에서 ' + fmt(last.F, 1) + 'kg으로 변합니다. 자세한 값은 아래 표에 있습니다.');
+
+    // 그래프 2
+    $('legend2').innerHTML =
+      '<span><i style="background:var(--s4)"></i>소비열량</span><span><i class="ln"></i>섭취열량</span><span><i class="bx" style="background:var(--s4);opacity:.3"></i>일일 적자</span>';
+    var sIn = v.intake;
+    drawChart('chart2', {
+      rows: rows, yDec: 0, minSpan: 400, fill: { top: function (r) { return r.m; }, bottom: function () { return sIn; }, css: 'var(--s4)' },
+      series: [
+        { name: '소비', css: 'var(--s4)', w: 2.5, get: function (r) { return r.m; } },
+        { name: '섭취', css: 'var(--ink-2)', dash: '5 4', get: function () { return sIn; } }
+      ],
+      tip: function (r) {
+        return '<div class="t0">' + r.day + '일차</div>' +
+          '<div class="tr"><span><i class="sw" style="background:var(--s4)"></i>소비열량</span><b>' + fmt(r.m, 0) + ' kcal</b></div>' +
+          '<div class="tr"><span><i class="sw" style="background:var(--ink-2)"></i>섭취열량</span><b>' + fmt(sIn, 0) + ' kcal</b></div>' +
+          '<div class="tr"><span>' + (r.d >= 0 ? '적자' : '잉여') + '</span><b>' + fmt(Math.abs(r.d), 0) + ' kcal</b></div>';
+      }
+    });
+    $('chart2').setAttribute('aria-label', '소비열량이 ' + fmt(first.m, 0) + ' kcal에서 ' + fmt(last.m, 0) + ' kcal로 줄어, 일일 적자가 ' + fmt(first.d, 0) + ' kcal에서 ' + fmt(last.d, 0) + ' kcal로 변합니다.');
+
+    buildTable(rows, h2, v.step);
+
+    $('calib').innerHTML = '현재 입력 기준 보정값: 안정시 대사 <b>' + fmt(cal.rmr0, 0) + '</b> kcal · 유지열량 <b>' + fmt(cal.M0, 0) +
+      '</b> kcal · 고정 보정 c0 <b>' + sgn(cal.c0, 0) + '</b> kcal · 활동 계수 kW <b>' + fmt(cal.kW, 2) + '</b> kcal/kg·일 · 지방 분해 속도계수 <b>' + (c.rF / c.fc).toFixed(4) + '</b> /일';
+
+    save();
+  }
+
+  /* ---------- 저장과 복원 (이 브라우저에만) ---------- */
+  function save() {
+    try {
+      var o = { simple: {}, consts: {}, pal: palTable(), palSel: currentPalSel(), bfmode: document.querySelector('input[name="bfmode"]:checked').value };
+      SIMPLE_IDS.forEach(function (id) { o.simple[id] = $(id).value; });
+      CONST_DEFS.forEach(function (g) { g.items.forEach(function (it) { o.consts[it.k] = $('c_' + it.k).value; }); });
+      localStorage.setItem(STORE_KEY, JSON.stringify(o));
+    } catch (e) { /* 저장을 쓸 수 없는 환경 */ }
+  }
+  function restore() {
+    var raw = null;
+    try { raw = localStorage.getItem(STORE_KEY); } catch (e) { return; }
+    if (!raw) return;
+    try {
+      var o = JSON.parse(raw);
+      if (o.pal) o.pal.forEach(function (x, i) { if ($('pal_' + i)) $('pal_' + i).value = x; });
+      if (o.consts) Object.keys(o.consts).forEach(function (k) { if ($('c_' + k)) $('c_' + k).value = o.consts[k]; });
+      renderPal(o.palSel != null ? String(o.palSel) : '1');
+      if (o.simple) Object.keys(o.simple).forEach(function (id) { if ($(id)) $(id).value = o.simple[id]; });
+      if (o.bfmode) { var r = document.querySelector('input[name="bfmode"][value="' + o.bfmode + '"]'); if (r) r.checked = true; }
+      var iv = parseFloat($('intake').value); if (isFinite(iv)) $('intakeRange').value = iv;
+    } catch (e) { /* 저장값이 깨졌으면 기본값 사용 */ }
+  }
+
+  function resetSettings() {
+    CONST_DEFS.forEach(function (g) { g.items.forEach(function (it) { $('c_' + it.k).value = C0[it.k]; }); });
+    PAL_META.forEach(function (p, i) { $('pal_' + i).value = DEFAULT_PAL[i]; });
+    renderPal();
+    update();
+  }
+
+  /* ---------- 이벤트 ---------- */
+  function copyTable() {
+    var msg = $('copyMsg');
+    function ok() { msg.textContent = '표를 복사했습니다. 스프레드시트에 붙여 넣을 수 있습니다.'; setTimeout(function () { msg.textContent = ''; }, 3500); }
+    function fail() {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = lastTableText; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        var done = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (done) { ok(); return; }
+      } catch (e) { /* 아래 안내 */ }
+      msg.textContent = '복사하지 못했습니다. 표를 직접 선택해 복사해 주세요.';
+    }
+    try {
+      navigator.clipboard.writeText(lastTableText).then(ok, fail);
+    } catch (e) { fail(); }
+  }
+
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (!t || !t.id && t.name !== 'pal' && t.name !== 'bfmode') return;
+    if (t.id === 'intakeRange') { $('intake').value = t.value; }
+    else if (t.id === 'intake') { var q = parseFloat(t.value); if (isFinite(q)) $('intakeRange').value = q; }
+    if (t.id && t.id.indexOf('pal_') === 0) renderPal();
+    if (t.id === 'palCustom') { var r = document.querySelector('input[name="pal"][value="c"]'); if (r) r.checked = true; }
+    update();
+  });
+  $('legend1').addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('button[data-k]') : null;
+    if (!b) return;
+    var k = b.getAttribute('data-k');
+    var on = ['w', 'P', 'F'].filter(function (x) { return !hidden1[x]; });
+    if (!hidden1[k] && on.length === 1) return;
+    hidden1[k] = !hidden1[k];
+    update();
+  });
+  $('copyBtn').addEventListener('click', copyTable);
+  $('resetBtn').addEventListener('click', resetSettings);
+
+  var rz = null;
+  function redraw() {
+    ['chart1', 'chart2'].forEach(function (id) { if (lastChartCfg[id]) drawChart(id, lastChartCfg[id]); });
+  }
+  if (window.ResizeObserver) {
+    var ro = new ResizeObserver(function () { clearTimeout(rz); rz = setTimeout(redraw, 60); });
+    ro.observe($('chart1')); ro.observe($('chart2'));
+  } else {
+    window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(redraw, 60); });
+  }
+
+  buildSettings();
+  renderPal('1');
+  restore();
+  update();
+})();
+</script>
+
+</body></html>
