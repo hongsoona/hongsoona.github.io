@@ -5,7 +5,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
-/* 레이아웃: 왼쪽은 입력 패널(데스크톱에서 고정), 오른쪽은 요약, 그래프 두 개, 표 순서. 좁은 화면에서는 한 열로 쌓는다. */
 :root {
   --bg: #f1f4f2;
   --surface: #fcfcfb;
@@ -117,7 +116,6 @@ h1, h2, h3, p { margin: 0; }
 .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: start; }
 @media (min-width: 980px) {
   .layout { grid-template-columns: 350px minmax(0, 1fr); gap: 22px; }
-  .panel { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); max-height: calc(100vh - 32px); overflow: auto; }
 }
 .results { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
@@ -137,13 +135,13 @@ h1, h2, h3, p { margin: 0; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .inp { position: relative; }
 .inp .u { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--ink-3); pointer-events: none; }
-input[type="number"], select {
+input[type="text"], input[type="number"], select {
   width: 100%; height: 40px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
   color: var(--ink); font-family: var(--mono); font-size: 15px; padding: 0 12px; min-width: 0;
 }
 select { font-family: var(--font); }
 .inp input { padding-right: 52px; }
-input[type="number"]:focus-visible, select:focus-visible, button:focus-visible, input[type="range"]:focus-visible, summary:focus-visible {
+input[type="text"]:focus-visible, select:focus-visible, input[type="number"]:focus-visible, select:focus-visible, button:focus-visible, input[type="range"]:focus-visible, summary:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 2px;
 }
 input[type="range"] { width: 100%; accent-color: var(--accent); margin: 4px 0 0; }
@@ -167,6 +165,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); margin: 4px 0 0;
 .pal-t small { color: var(--ink-3); font-size: 12px; }
 .pal-custom { grid-template-columns: auto minmax(0, 1fr) 84px; }
 .pal-custom input[type="number"] { height: 34px; padding: 0 8px; }
+.pal-custom input[type="text"] { height: 34px; padding: 0 8px; }
 
 .est-box { background: var(--surface-2); border: 1px solid var(--line-2); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: var(--ink-2); }
 .est-box b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
@@ -267,7 +266,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .bands .here { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--danger); }
 .warnsec .src { font-size: 12.5px; color: var(--ink-3); }
 @media (max-width: 640px) { .bands li { grid-template-columns: minmax(0, 1fr); } }
-.foot { margin-top: 18px; font-size: 12.5px; color: var(--ink-3); max-width: 80ch; }
+.foot { margin-top: 18px; font-size: 12.5px; color: var(--ink-3); }
 @media (max-width: 520px) {
   .panel { padding: 15px; }
   .tile .v { font-size: 22px; }
@@ -278,14 +277,14 @@ tbody tr:last-child td { border-bottom: 0; }
 
 <div class="wrap">
   <header class="head">
-    <h1>체중 변화 시뮬레이터</h1>
-    <p>하루 섭취열량과 활동량을 넣으면 체중, 체지방, 제지방이 날마다 어떻게 변하는지 계산합니다. 체중이 줄면 소비열량도 함께 줄고, 지방이 내놓을 수 있는 에너지에는 한계가 있다는 점을 반영한 모형입니다.</p>
+    <h1>체중 변화 계산기</h1>
+    <p>일일 섭취 열량과 활동량을 바탕으로 시간에 따른 체중 변화를 모델로 예측합니다. </p>
   </header>
 
   <div class="layout">
     <form class="panel" id="inputs" onsubmit="return false" autocomplete="off">
       <fieldset class="group">
-        <legend>몸 상태</legend>
+        <legend>신체 조건</legend>
         <div class="row2">
           <label class="field"><span class="lab">키</span>
             <span class="inp"><input type="number" id="height" inputmode="decimal" min="100" max="230" step="1" value="175"><span class="u">cm</span></span></label>
@@ -308,25 +307,25 @@ tbody tr:last-child td { border-bottom: 0; }
             <span class="inp"><input type="number" id="age" inputmode="numeric" min="10" max="100" step="1" value="35"><span class="u">세</span></span></label>
         </div>
         <label class="field"><span class="lab">기초대사량 (선택)</span>
-          <span class="inp"><input type="number" id="rmrIn" inputmode="numeric" min="800" max="4000" step="10" placeholder="자동 계산"><span class="u">kcal</span></span>
-          <span class="hint">인바디 등 측정값이 있으면 입력하세요. 비우면 제지방으로 계산합니다.</span></label>
+          <span class="inp"><input type="number" id="rmrIn" inputmode="numeric" min="800" max="4000" step="10" placeholder="자동 추정"><span class="u">kcal</span></span>
+          <span class="hint">값을 안다면 입력하세요. 비어있는 경우 위 값을 바탕으로 추정합니다. </span></label>
         <div class="est-box" id="estBox" aria-live="polite"></div>
       </fieldset>
 
       <fieldset class="group">
         <legend>활동량 (PAL)</legend>
         <div class="pal-list" id="palList"></div>
-        <p class="hint">PAL은 하루 총소비열량을 안정시 대사량으로 나눈 값입니다. 가장 가까운 설명을 고르세요.</p>
+        <p class="hint">PAL은 일일 총소비열량을 기초대사량으로 나눈 값입니다. </p>
       </fieldset>
 
       <fieldset class="group">
-        <legend>계획</legend>
-        <label class="field"><span class="lab">하루 섭취열량</span>
+        <legend>기타</legend>
+        <label class="field"><span class="lab">일일 섭취열량</span>
           <span class="inp"><input type="number" id="intake" inputmode="numeric" min="0" max="8000" step="50" value="1600"><span class="u">kcal</span></span>
-          <input type="range" id="intakeRange" min="800" max="3500" step="50" value="1600" aria-label="하루 섭취열량 슬라이더">
+          <input type="range" id="intakeRange" min="800" max="3500" step="50" value="1600" aria-label="일일 섭취열량 슬라이더">
         </label>
         <div class="plan-box" id="planBox" aria-live="polite"></div>
-        <label class="field"><span class="lab">기간</span>
+        <label class="field"><span class="lab">계산 기간</span>
           <span class="inp"><input type="number" id="days" inputmode="numeric" min="1" max="730" step="1" value="120"><span class="u">일</span></span></label>
       </fieldset>
     </form>
@@ -338,18 +337,18 @@ tbody tr:last-child td { border-bottom: 0; }
 
       <section class="card">
         <div class="card-head">
-          <h2>체중과 체성분</h2>
+          <h2>체중 및 체성분</h2>
           <div class="legend" id="legend1"></div>
         </div>
-        <div class="chart" id="chart1" role="img" aria-label="체중과 체성분 그래프"><div class="plot"></div><div class="tip" hidden></div></div>
+        <div class="chart" id="chart1" role="img" aria-label="체중 및 체성분 그래프"><div class="plot"></div><div class="tip" hidden></div></div>
       </section>
 
       <section class="card">
         <div class="card-head">
-          <h2>하루 열량 수지</h2>
+          <h2>일일 섭취 및 소비 열량</h2>
           <div class="legend" id="legend2"></div>
         </div>
-        <div class="chart" id="chart2" role="img" aria-label="소비열량과 섭취열량 그래프"><div class="plot"></div><div class="tip" hidden></div></div>
+        <div class="chart" id="chart2" role="img" aria-label="일일 섭취 및 소비 열량 그래프"><div class="plot"></div><div class="tip" hidden></div></div>
       </section>
 
       <section class="card">
@@ -373,23 +372,33 @@ tbody tr:last-child td { border-bottom: 0; }
   </div>
 
   <section class="warnsec" id="warnsec" aria-labelledby="warn-h">
-    <h2 id="warn-h">저체중 구간 경고</h2>
-    <p class="lead">세계보건기구(WHO)와 정신의학계의 신경성 식욕부진증(DSM-5 기준) 중증도 분류를 기준으로 보면 각 구간의 신체 기능 상태는 다음과 같이 나뉩니다. 계산 결과의 체중이 이 구간에 들어간다면 그 계획은 실행하면 안 됩니다.</p>
+    <h2 id="warn-h">체질량지수(BMI)</h2>
+    <p class="lead">세계보건기구(WHO)와 정신의학계의 신경성 식욕부진증(DSM-5 기준) 중증도 분류를 기준으로 정리한 값입니다.</p>
     <div class="mybmi" id="myBmi" aria-live="polite"></div>
-    <h3>BMI 구간별 임상적 분류와 일상생활 가능 여부</h3>
+    <h3>BMI 구간별 분류</h3>
     <ul class="bands" id="bands">
-      <li data-b="1"><div class="bh"><span class="bmi">BMI 17.0 ~ 18.4</span><span class="nm">경도 저체중</span></div>
-        <div class="tx">의학적으로는 저체중에 해당하나, 기초적인 신체 기능과 호르몬 대사가 어느 정도 유지되어 외견상 마른 상태로 일반적인 일상생활이 가능한 수준입니다. 패션 모델들의 평균적인 하한선이 이 부근에 걸쳐 있습니다.</div></li>
-      <li data-b="2"><div class="bh"><span class="bmi">BMI 16.0 ~ 16.9</span><span class="nm">중등도 저체중</span></div>
-        <div class="tx">피하지방이 거의 소실되고 근육 손실이 본격화됩니다. 만성 피로, 추위 민감성, 기립성 저혈압, 여성의 경우 무월경이 흔하게 나타나지만, 본인의 의지로 일상생활을 버텨낼 수는 있는 구간입니다.</div></li>
-      <li data-b="3"><div class="bh"><span class="bmi">BMI 15.0 ~ 15.9</span><span class="nm">중증 저체중 · 일상생활의 마지노선</span></div>
+      <li data-b="9"><div class="bh"><span class="bmi">BMI 35.0 ~ </span><span class="nm">3단계 비만</span></div>
+        <div class="tx"></div></li>
+      <li data-b="8"><div class="bh"><span class="bmi">BMI 30.0 ~ 35.0</span><span class="nm">2단계 비만</span></div>
+        <div class="tx"></div></li>
+      <li data-b="7"><div class="bh"><span class="bmi">BMI 25.0 ~ 30.0</span><span class="nm">1단계 비만</span></div>
+        <div class="tx"></div></li>
+      <li data-b="6"><div class="bh"><span class="bmi">BMI 23.0 ~ 25.0</span><span class="nm">비만 전 단계</span></div>
+        <div class="tx">과체중으로 불리던 구간입니다. </div></li>
+      <li data-b="5"><div class="bh"><span class="bmi">BMI 18.5 ~ 23.0</span><span class="nm">정상</span></div>
+        <div class="tx">정상체중입니다. </div></li>
+      <li data-b="4"><div class="bh"><span class="bmi">BMI 17.0 ~ 18.5</span><span class="nm">경도 저체중</span></div>
+        <div class="tx">의학적으로는 저체중에 해당하나, 기초적인 신체 기능과 호르몬 대사가 어느 정도 유지되어 외견상 마른 상태로 일상생활이 가능은 한 수준입니다. 패션 모델들의 경우도 이보다 체질량 지수가 낮지는 않다고 알려져 있습니다.</div></li>
+      <li data-b="3"><div class="bh"><span class="bmi">BMI 16.0 ~ 17.0</span><span class="nm">중등도 저체중</span></div>
+        <div class="tx">피하지방이 거의 소실되고 근육 손실이 본격화됩니다. 만성 피로, 추위 민감성, 기립성 저혈압, 무월경이 흔하게 나타나지만, 본인의 의지로 일상생활을 유지하는 경우도 있습니다.</div></li>
+      <li data-b="2"><div class="bh"><span class="bmi">BMI 15.0 ~ 16.0</span><span class="nm">중증 저체중 · 일상생활의 마지노선</span></div>
         <div class="tx">골격근과 함께 심장 근육, 소화기관의 평활근까지 위축되기 시작합니다. 조금만 걸어도 숨이 차고, 앉았다 일어설 때 시야가 암전되며, 집중력과 인지 기능이 현저히 떨어집니다. '가까스로 일상생활을 유지한다'는 전제가 성립할 수 있는 사실상의 하한선입니다.</div></li>
-      <li data-b="4"><div class="bh"><span class="bmi">BMI 15.0 미만</span><span class="nm">극심한 저체중 · 의료적 응급 상태</span></div>
-        <div class="tx">임상적으로 통원 치료가 불가능하다고 판단하여 강제 입원이나 절대 안정(침상 안정)을 권고하는 기준선입니다. 체온 조절 능력이 상실되고, 서맥(느린 맥박), 부정맥, 전해질 불균형으로 인해 일상적인 활동 중 급성 심정지가 발생할 위험이 높습니다.</div></li>
-      <li data-b="5"><div class="bh"><span class="bmi">BMI 13.0 ~ 13.5 미만</span><span class="nm">생명 위협 및 아사 경계</span></div>
+      <li data-b="1"><div class="bh"><span class="bmi">BMI 13.5 ~ 15.0</span><span class="nm">극심한 저체중 · 의료적 응급 상태</span></div>
+        <div class="tx">임상적으로 통원 치료가 불가능하다고 판단하여 강제 입원이나 침상에서의 절대 안정을 권고하는 기준선입니다. 체온 조절 능력이 상실되고, 서맥(느린 맥박), 부정맥, 전해질 불균형으로 인해 일상적인 활동 중 급성 심정지가 발생할 위험이 높습니다.</div></li>
+      <li data-b="0"><div class="bh"><span class="bmi">BMI ~ 13.5 </span><span class="nm">생명 위협 및 아사 경계</span></div>
         <div class="tx">장기 부전이 진행되는 단계입니다. 자력 보행 자체가 위험하며, 인체가 생존을 위해 뇌와 심장을 제외한 말초 기능을 차단하기 시작합니다.</div></li>
     </ul>
-    <p class="src">위 내용은 첨부된 자료를 옮긴 것이며, 기준과 수치는 자료마다 다를 수 있고 의학적 진단이 아닙니다. 식사나 체중 때문에 힘들다면 혼자 감당하지 말고 의료진과 상담하세요.</p>
+    <p class="src">위 내용은 인터넷에 알려진 자료를 옮긴 것이고 의학적 진단이 아닙니다. </p>
   </section>
 
   <details class="settings" id="settings">
@@ -397,20 +406,12 @@ tbody tr:last-child td { border-bottom: 0; }
     <div class="settings-body">
       <div class="method">
         <div class="group-title">계산 방식</div>
+        <div>체지방 F, 제지방 P, 섭취열량을 P라 합니다. </div>
         <div>소비열량 <code>m = kP·P + kF·F + TEF·s + kW·(F+P) + A</code> 에서 적자 <code>d = m − s</code> 를 구합니다. (F 체지방, P 제지방, s 섭취열량)</div>
         <div>지방이 하루에 내놓을 수 있는 에너지는 <code>rF·F</code> 입니다. <code>d ≤ rF·F</code> 이면 지방만 줄고(국면 1), 넘으면 지방은 한계 속도로 줄고 모자란 만큼 제지방이 줄어듭니다(국면 2).</div>
         <div>활동 계수 kW는 입력한 체성분과 PAL에서 정합니다. 유지열량 = PAL × (kP·P₀ + kF·F₀) 가 되도록 맞춥니다. 적응성 열생성 A는 섭취 감소분의 β배를 향해 시간상수 τ로 따라갑니다. 하루를 0.1일 단위로 나눠 4차 룽게-쿠타법으로 적분합니다.</div>
       </div>
       <div class="calib" id="calib" aria-live="polite"></div>
-      <div class="group">
-        <div class="group-title">안정시 대사량 기준</div>
-        <label class="field" style="max-width:340px"><span class="lab">기초대사량을 입력하지 않았을 때</span>
-          <select id="rmrMode">
-            <option value="katch" selected>Katch-McArdle (제지방 기반)</option>
-            <option value="tissue">모형 원식 (kP·P + kF·F)</option>
-          </select>
-          <span class="hint">모형 원식은 같은 체격에서 표준식보다 약 15~20% 낮게 나옵니다.</span></label>
-      </div>
       <div id="constGroups" style="display:flex;flex-direction:column;gap:22px"></div>
       <div class="group">
         <div class="group-title">활동계수(PAL) 표</div>
@@ -420,7 +421,7 @@ tbody tr:last-child td { border-bottom: 0; }
     </div>
   </details>
 
-  <p class="foot">상수는 문헌 평균값을 기본으로 둔 것이라 개인차가 큽니다. 수분과 글리코겐 변동, 호르몬과 질환, 약물, 근력운동에 따른 제지방 증가는 반영하지 않습니다. 섭취가 소비보다 많은 경우 늘어난 열량은 모두 체지방으로 계산합니다. 추세를 이해하기 위한 단순 모형이며 개인 처방에는 쓸 수 없습니다.</p>
+  <p class="foot">아래의 상수는 문헌의 평균값을 기본으로 둔 것이라 개인에 따라 차이가 있습니다. <br>수분과 글리코겐 변동, 호르몬과 질환, 약물, 근력운동에 따른 제지방 증가는 반영되지 않습니다. <br>섭취한 열량이 소비한 열량보다 많은 경우, 잉여 열량은 모두 체지방으로 전환된다고 가정합니다.</p>
 </div>
 
 <script>
@@ -453,17 +454,14 @@ function estimateBodyFatPct(p, c) {
 }
 
 /* 초기 체성분, 안정시 대사량 기준값, 활동계수(PAL)로 계수를 보정한다.
-   rmrTarget(kcal)을 주면 초기 안정시 대사량이 그 값이 되도록 고정 항 c0를 둔다.
    (조직별 기울기 kP, kF는 그대로여서 체성분이 변할 때의 변화율은 유지된다.)
    유지열량 M0 = PAL × RMR0, 유지 상태에서 m = M0 가 되도록 kW를 정한다. */
 function calibrate(w0, F0, pal, c, rmrTarget) {
   var P0 = w0 - F0;
   var tissue = c.kP * P0 + c.kF * F0;
-  var rmr0 = (rmrTarget != null) ? rmrTarget : tissue;
-  var c0 = rmr0 - tissue;
-  var M0 = pal * rmr0;
-  var kW = (M0 * (1 - c.tef) - rmr0) / w0;
-  return { P0: P0, rmr0: rmr0, M0: M0, kW: kW, c0: c0, tissue: tissue };
+  var M0 = pal * rmrTarget;
+  var kW = (M0 * (1 - c.tef) - tissue) / w0;
+  return { P0: P0, rmr0: rmrTarget, M0: M0, kW: kW, c0: 0, tissue: tissue };
 }
 
 /* 상태 (F, P, A)의 시간 미분. phase 1: 지방만, 2: 제지방도 소모 */
@@ -525,8 +523,8 @@ function simulate(w0, F0, s, days, pal, c, opts) {
 
   var CONST_DEFS = [
     { g: '에너지 환산', items: [
-      { k: 'fc', l: '체지방 1kg 열량', u: 'kcal/kg', step: 100, h: '기본 7700' },
-      { k: 'pc', l: '제지방 1kg 열량', u: 'kcal/kg', step: 50, h: '기본 1400' },
+      { k: 'fc', l: '체지방 조직의 열량', u: 'kcal/kg', step: 100, h: '기본 7700' },
+      { k: 'pc', l: '제지방 조직의 열량', u: 'kcal/kg', step: 50, h: '기본 1400' },
       { k: 'rF', l: '지방 방출 한계', u: 'kcal/kg·일', step: 1, h: '지방 1kg이 하루에 내는 최대 에너지' }
     ] },
     { g: '대사량 계수', items: [
@@ -535,10 +533,10 @@ function simulate(w0, F0, s, days, pal, c, opts) {
       { k: 'tef', l: '식이성 열생성 TEF', u: '섭취 대비', step: 0.01, h: '0.10은 섭취열량의 10%' }
     ] },
     { g: '적응성 열생성', items: [
-      { k: 'beta', l: '감소 비율 β', u: '섭취 감소 대비', step: 0.01, h: '기본 0.14, 0이면 끔' },
-      { k: 'tau', l: '시간상수 τ', u: '일', step: 1, h: '클수록 천천히 반응' }
+      { k: 'beta', l: '감소 비율 β', u: '섭취 감소 대비', step: 0.01, h: '기본 0.14 = 14% 감소, 0이면 끔' },
+      { k: 'tau', l: '시간상수 τ', u: '일', step: 1, h: 'τ일 후 열 생성의 적응이 완료됨' }
     ] },
-    { g: 'Katch-McArdle 안정시 대사량', items: [
+    { g: 'Katch-McArdle 기초대사량 추정', items: [
       { k: 'katA', l: '절편', u: 'kcal', step: 5, h: 'RMR = 절편 + 계수 × 제지방' },
       { k: 'katB', l: '제지방 계수', u: 'kcal/kg', step: 0.1, h: '' }
     ] },
@@ -557,7 +555,7 @@ function simulate(w0, F0, s, days, pal, c, opts) {
     { n: '매우 활발', d: '하루 2회 훈련, 육체노동 직업' }
   ];
   var STORE_KEY = 'wsim-v1';
-  var SIMPLE_IDS = ['rmrIn', 'rmrMode', 'height', 'weight', 'bfPct', 'sex', 'age', 'intake', 'days', 'step', 'palCustom'];
+  var SIMPLE_IDS = ['rmrIn', 'height', 'weight', 'bfPct', 'sex', 'age', 'intake', 'days', 'step', 'palCustom'];
   var lastChartCfg = {};
   var lastTableText = '';
   var hidden1 = {};
@@ -581,7 +579,7 @@ function simulate(w0, F0, s, days, pal, c, opts) {
       html += '<div class="group"><div class="group-title">' + g.g + '</div><div class="sgrid">';
       g.items.forEach(function (it) {
         html += '<label class="field"><span class="lab">' + it.l + '</span><span class="inp">' +
-          '<input type="number" id="c_' + it.k + '" step="' + it.step + '" value="' + C0[it.k] + '">' +
+          '<input type="text" inputmode="numeric" pattern="[0-9]*" id="c_' + it.k + '" value="' + C0[it.k] + '">' +
           (it.u ? '<span class="u">' + it.u + '</span>' : '') + '</span>' +
           (it.h ? '<span class="hint">' + it.h + '</span>' : '') + '</label>';
       });
@@ -657,7 +655,7 @@ function simulate(w0, F0, s, days, pal, c, opts) {
       });
     });
     if (c.fc <= 0 || c.pc <= 0 || c.tau <= 0) {
-      errs.push('열량 환산값과 시간상수는 0보다 커야 합니다');
+      errs.push('각 조직별 열량과 시간상수 τ는 0보다 커야 합니다');
       c.fc = c.fc > 0 ? c.fc : C0.fc; c.pc = c.pc > 0 ? c.pc : C0.pc; c.tau = c.tau > 0 ? c.tau : C0.tau;
     }
     return { v: v, c: c, errs: errs };
@@ -800,14 +798,14 @@ function simulate(w0, F0, s, days, pal, c, opts) {
     var idx = [];
     for (var d = 0; d < rows.length; d += step) idx.push(d);
     if (idx[idx.length - 1] !== rows.length - 1) idx.push(rows.length - 1);
-    var heads = ['일차', '체중 (kg)', 'BMI', '체지방 (kg)', '제지방 (kg)', '체지방률 (%)', '소비열량 (kcal)', '적자 (kcal)', '국면'];
+    var heads = ['일차', '체중 (kg)', 'BMI', '체지방 (kg)', '제지방 (kg)', '체지방률 (%)', '소비열량 (kcal)', '적자 (kcal)', '제지방 소모'];
     var w0 = rows[0].w;
     var html = '<thead><tr>' + heads.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>';
     var text = heads.join('\t') + '\n';
     idx.forEach(function (i) {
       var r = rows[i];
       var cells = [r.day, fmt(r.w, 1), fmt(r.w / h2, 1), fmt(r.F, 1), fmt(r.P, 1), fmt(r.F / r.w * 100, 1), fmt(r.m, 0), fmt(r.d, 0)];
-      var ph = r.phase === 2 ? '제지방 소모' : '지방만';
+      var ph = r.phase === 2 ? 'O' : 'X';
       html += '<tr><td>' + r.day + '일</td>' + cells.slice(1).map(function (c) { return '<td>' + c + '</td>'; }).join('') +
         '<td><span class="pill' + (r.phase === 2 ? ' p2' : '') + '">' + ph + '</span></td></tr>';
       text += cells.join('\t') + '\t' + ph + '\n';
@@ -831,23 +829,23 @@ function simulate(w0, F0, s, days, pal, c, opts) {
 
     $('bf-known').hidden = v.mode !== 'known';
     $('bf-est').hidden = v.mode !== 'est';
-    $('estBox').innerHTML = (v.mode === 'est' ? '추정 체지방률 <b>' + fmt(pct, 1) + '%</b> · 오차 ±4~5%p 가능<br>' : '') +
-      '체지방 <b>' + fmt(F0, 1) + ' kg</b> · 제지방 <b>' + fmt(P0, 1) + ' kg</b> · BMI <b>' + fmt(v.weight / h2, 1) + '</b>';
+    $('estBox').innerHTML = (v.mode === 'est' ? '추정 체지방률 <b>' + fmt(pct, 1) + '%</b> (오차 ±5%p)<br>' : '') +
+      '체지방: <b>' + fmt(F0, 1) + 'kg</b>, 제지방: <b>' + fmt(P0, 1) + 'kg</b>, BMI: <b>' + fmt(v.weight / h2, 1) + '</b>';
 
-    var rmrIn = parseFloat($('rmrIn').value), rmrTarget = null, rmrSrc = '모형 원식';
+    var rmrIn = parseFloat($('rmrIn').value), rmrTarget = null, rmrSrc = 'Katch-McArdle';
     if (isFinite(rmrIn) && rmrIn >= 800 && rmrIn <= 4000) { rmrTarget = rmrIn; rmrSrc = '입력값'; }
-    else if ($('rmrMode').value === 'katch') { rmrTarget = c.katA + c.katB * P0; rmrSrc = 'Katch-McArdle'; }
+    else { rmrTarget = c.katA + c.katB * P0; rmrSrc = 'Katch-McArdle'; }
     var S = simulate(v.weight, F0, v.intake, v.days, v.pal, c, { rmrTarget: rmrTarget });
     var rows = S.rows, cal = S.cal, first = rows[0], last = rows[rows.length - 1];
     var d0 = first.d;
-    $('planBox').innerHTML = '유지열량 <b>' + fmt(cal.M0, 0) + ' kcal</b> · 안정시 대사 <b>' + fmt(cal.rmr0, 0) + ' kcal</b> <small>(' + rmrSrc + ')</small><br>' +
-      '첫날 ' + (d0 >= 0 ? '적자' : '잉여') + ' <b>' + fmt(Math.abs(d0), 0) + ' kcal</b>';
+    $('planBox').innerHTML = '유지열량: <b>' + fmt(cal.M0, 0) + 'kcal</b><br>기초대사량: <b>' + fmt(cal.rmr0, 0) + 'kcal</b> <small>(' + rmrSrc + ')</small><br>' +
+      '첫날 ' + (d0 >= 0 ? '적자' : '잉여') + ': <b>' + fmt(Math.abs(d0), 0) + 'kcal</b>';
 
     var tiles = [
-      { k: last.day + '일 뒤 체중', v: fmt(last.w, 1), u: 'kg', s: sgn(last.w - first.w, 1) + ' kg · ' + sgn((last.w - first.w) / first.w * 100, 1) + '%' },
-      { k: '체지방', v: fmt(last.F, 1), u: 'kg', s: sgn(last.F - first.F, 1) + ' kg · 체지방률 ' + fmt(last.F / last.w * 100, 1) + '%' },
+      { k: last.day + '일 뒤 체중', v: fmt(last.w, 1), u: 'kg', s: sgn(last.w - first.w, 1) + 'kg <br>' + sgn((last.w - first.w) / first.w * 100, 1) + '%' },
+      { k: '체지방', v: fmt(last.F, 1), u: 'kg', s: sgn(last.F - first.F, 1) + 'kg <br>체지방률 ' + fmt(last.F / last.w * 100, 1) + '%' },
       { k: '제지방', v: fmt(last.P, 1), u: 'kg', s: sgn(last.P - first.P, 1) + ' kg' },
-      { k: '소비열량 (처음 → 끝)', v: fmt(last.m, 0), u: 'kcal', s: '처음 ' + fmt(first.m, 0) + ' kcal' }
+      { k: last.day + '일 뒤 유지열량', v: fmt(last.m, 0), u: 'kcal', s: '처음 ' + fmt(first.m, 0) + ' kcal' }
     ];
     $('tiles').innerHTML = tiles.map(function (t) {
       return '<div class="tile"><span class="k">' + t.k + '</span><span class="v">' + t.v + '<small>' + t.u + '</small></span><span class="s">' + t.s + '</span></div>';
@@ -856,24 +854,24 @@ function simulate(w0, F0, s, days, pal, c, opts) {
     var p2 = null;
     for (var i = 0; i < rows.length; i++) { if (rows[i].phase === 2) { p2 = rows[i]; break; } }
     var pl;
-    if (!p2) pl = '<span class="pill">국면 1</span> 기간 내내 지방만 소모됩니다.';
-    else if (p2.day === 0) pl = '<span class="pill p2">국면 2</span> 처음부터 적자가 지방 방출 한계를 넘어 제지방도 소모됩니다.';
-    else pl = '<span class="pill">국면 1</span> ' + p2.day + '일째까지 지방만 소모 <span class="pill p2">국면 2</span> 이후 제지방도 소모됩니다.';
+    if (!p2) pl = '<b>기간 전체에서 지방만 소비된다고 가정합니다.</b>';
+    else if (p2.day === 0) pl = '<b>기간 전체에서 제지방이 반드시 소모됩니다.</b>';
+    else pl = '<b>' + p2.day + '일째까지 지방만 소모된다고 가정합니다. 그 후로는 제지방이 반드시 소모됩니다.</b>';
     $('phaseLine').innerHTML = pl;
 
     // 안내
-    if (cal.kW < 0) notes.push({ t: 'warn', h: '<b>활동계수가 너무 낮습니다.</b> 이 PAL에서는 활동 항 kW가 음수가 됩니다. 활동 수준을 올리거나 대사량 상수를 확인하세요.' });
-    if (v.intake >= cal.M0) notes.push({ t: 'info', h: '<b>섭취열량이 유지열량 이상입니다.</b> 모형은 남는 열량을 모두 체지방으로 계산하고 제지방 증가는 반영하지 않습니다.' });
-    if (v.intake < cal.rmr0 && v.intake > 0) notes.push({ t: 'warn', h: '<b>섭취열량이 안정시 대사량(' + fmt(cal.rmr0, 0) + ' kcal)보다 낮습니다.</b> 이 수준을 오래 유지하는 계획은 모형의 신뢰 범위를 벗어나고 건강에도 위험합니다.' });
+    if (cal.kW < 0) notes.push({ t: 'warn', h: '<b>활동계수(kW)가 음수입니다.</b> 활동량 및 대사량 상수를 확인하세요.' });
+    if (v.intake >= cal.M0) notes.push({ t: 'info', h: '<b>섭취열량이 유지열량 이상입니다.</b> 모형은 체중의 증가를 계산하도록 설계되지 않았습니다.' });
+    if (v.intake < cal.rmr0 && v.intake > 0) notes.push({ t: 'warn', h: '<b>섭취열량이 기초대사량(' + fmt(cal.rmr0, 0) + ' kcal)보다 낮습니다.' });
     var low = null, vlow = null;
     for (var j = 0; j < rows.length; j++) {
       var b = rows[j].w / h2;
       if (low === null && b < 18.5) low = rows[j];
       if (vlow === null && b < 16) vlow = rows[j];
     }
-    if (vlow && !(vlow.day === 0)) notes.push({ t: 'danger', h: '<b>' + vlow.day + '일째에 BMI가 16 아래로 내려갑니다.</b> 심각한 저체중 구간이며 이후 값은 모형으로 믿기 어렵습니다.' });
-    else if (low && low.day > 0) notes.push({ t: 'warn', h: '<b>' + low.day + '일째에 BMI가 18.5 아래로 내려갑니다.</b> 저체중 구간에 들어가면 모형의 정확도가 떨어집니다.' });
-    else if (low && low.day === 0) notes.push({ t: 'warn', h: '<b>시작 BMI가 이미 18.5 미만입니다.</b> 감량 계획에는 맞지 않을 수 있습니다.' });
+    if (vlow && !(vlow.day === 0)) notes.push({ t: 'danger', h: '<b>' + vlow.day + '일째부터 BMI가 16 이하일 것으로 예측됩니다.</b> 모형의 예측을 신뢰할 수 없습니다. ' });
+    else if (low && low.day > 0) notes.push({ t: 'warn', h: '<b>' + low.day + '일째부터 BMI가 18.5 이하일 것으로 예측됩니다.</b> 모형의 예측이 부적절할 수 있습니다. ' });
+    else if (low && low.day === 0) notes.push({ t: 'warn', h: '<b>시작 BMI가 이미 18.5 미만입니다.</b> 입력 값이 올바른지 확인하십시오.' });
     if (S.stoppedAt != null) notes.push({ t: 'danger', h: '<b>' + S.stoppedAt + '일째에 제지방이 10kg 아래로 떨어져 계산을 중단했습니다.</b> 그래프와 표는 그 전날까지 표시합니다.' });
     $('notes').innerHTML = notes.map(function (n) { return '<div class="note ' + n.t + '">' + n.h + '</div>'; }).join('');
 
@@ -881,17 +879,17 @@ function simulate(w0, F0, s, days, pal, c, opts) {
     // 저체중 구간 경고: 이번 계획의 최저 BMI가 속한 구간 강조
     var minB = Infinity, minDay = 0;
     rows.forEach(function (r) { var b = r.w / h2; if (b < minB) { minB = b; minDay = r.day; } });
-    var band = minB >= 18.5 ? 0 : minB >= 17 ? 1 : minB >= 16 ? 2 : minB >= 15 ? 3 : minB >= 13.5 ? 4 : 5;
-    var bandNames = ['', '경도 저체중', '중등도 저체중', '중증 저체중', '극심한 저체중', '생명 위협 및 아사 경계'];
+    var band = minB >= 35 ? 9 : minB >= 30 ? 8 : minB >= 25 ? 7 : minB >= 23 ? 6 : minB >= 18.5 ? 5 : minB >= 17 ? 4 : minB >= 16 ? 3 : minB >= 15 ? 2 : minB >= 13.5 ? 1 : 0;
+    var bandNames = ['생명 위협 및 아사 경계', '극심한 저체중', '중증 저체중', '중등도 저체중', '경도 저체중'];
     Array.prototype.forEach.call(document.querySelectorAll('#bands li'), function (li) {
-      var on = li.getAttribute('data-b') === String(band) || (band === 5 && li.getAttribute('data-b') === '4');
+      var on = li.getAttribute('data-b') === String(band);
       li.classList.toggle('on', on);
       var old = li.querySelector('.here'); if (old) old.remove();
-      if (on) { var sp = document.createElement('span'); sp.className = 'here'; sp.textContent = '이번 계획의 최저 BMI가 이 구간입니다'; li.querySelector('.bh').appendChild(sp); }
+      if (on) { var sp = document.createElement('span'); sp.className = 'here'; sp.textContent = ''; li.querySelector('.bh').appendChild(sp); }
     });
-    $('myBmi').innerHTML = band === 0
-      ? '이번 계획의 최저 BMI는 <b>' + fmt(minB, 1) + '</b> (' + minDay + '일째)로 저체중 기준(18.5) 위입니다. 그래도 이 값이 건강한 체중이라는 뜻은 아닙니다.'
-      : '이번 계획의 최저 BMI는 <b>' + fmt(minB, 1) + '</b> (' + minDay + '일째), <b>' + bandNames[band] + '</b> 구간입니다. 섭취열량이나 기간을 조정하세요.';
+    $('myBmi').innerHTML = band >= 5
+      ? '계산 종료시 BMI는 <b>' + fmt(minB, 1) + '</b>입니다.'
+      : '계산 종료시 BMI는 <b>' + fmt(minB, 1) + '</b>, <b>' + bandNames[band] + '</b> 구간입니다. 다시 한번 확인해주세요';
 
     // 그래프 1
     var bmi185 = 18.5 * h2;
@@ -910,9 +908,9 @@ function simulate(w0, F0, s, days, pal, c, opts) {
       ],
       tip: function (r) {
         return '<div class="t0">' + r.day + '일차</div>' +
-          '<div class="tr"><span><i class="sw" style="background:var(--s1)"></i>체중</span><b>' + fmt(r.w, 1) + ' kg</b></div>' +
-          '<div class="tr"><span><i class="sw" style="background:var(--s3)"></i>제지방</span><b>' + fmt(r.P, 1) + ' kg</b></div>' +
-          '<div class="tr"><span><i class="sw" style="background:var(--s2)"></i>체지방</span><b>' + fmt(r.F, 1) + ' kg</b></div>' +
+          '<div class="tr"><span><i class="sw" style="background:var(--s1)"></i>체중</span><b>' + fmt(r.w, 1) + 'kg</b></div>' +
+          '<div class="tr"><span><i class="sw" style="background:var(--s3)"></i>제지방</span><b>' + fmt(r.P, 1) + 'kg</b></div>' +
+          '<div class="tr"><span><i class="sw" style="background:var(--s2)"></i>체지방</span><b>' + fmt(r.F, 1) + 'kg</b></div>' +
           '<div class="tr"><span>체지방률</span><b>' + fmt(r.F / r.w * 100, 1) + '%</b></div>' +
           '<div class="tr"><span>BMI</span><b>' + fmt(r.w / h2, 1) + '</b></div>';
       }
@@ -940,8 +938,8 @@ function simulate(w0, F0, s, days, pal, c, opts) {
 
     buildTable(rows, h2, v.step);
 
-    $('calib').innerHTML = '현재 입력 기준 보정값: 안정시 대사 <b>' + fmt(cal.rmr0, 0) + '</b> kcal · 유지열량 <b>' + fmt(cal.M0, 0) +
-      '</b> kcal · 고정 보정 c0 <b>' + sgn(cal.c0, 0) + '</b> kcal · 활동 계수 kW <b>' + fmt(cal.kW, 2) + '</b> kcal/kg·일 · 지방 분해 속도계수 <b>' + (c.rF / c.fc).toFixed(4) + '</b> /일';
+    $('calib').innerHTML = '기초대사량 <b>' + fmt(cal.rmr0, 0) + '</b> kcal, 유지열량 <b>' + fmt(cal.M0, 0) +
+      '</b> kcal, 활동 계수 kW <b>' + fmt(cal.kW, 2) + '</b> kcal/kg·일, 지방 분해 속도계수 <b>' + (c.rF / c.fc).toFixed(4) + '</b> /일';
 
     save();
   }
@@ -980,7 +978,7 @@ function simulate(w0, F0, s, days, pal, c, opts) {
   /* ---------- 이벤트 ---------- */
   function copyTable() {
     var msg = $('copyMsg');
-    function ok() { msg.textContent = '표를 복사했습니다. 스프레드시트에 붙여 넣을 수 있습니다.'; setTimeout(function () { msg.textContent = ''; }, 3500); }
+    function ok() { msg.textContent = '표를 복사했습니다. '; setTimeout(function () { msg.textContent = ''; }, 3500); }
     function fail() {
       try {
         var ta = document.createElement('textarea');
